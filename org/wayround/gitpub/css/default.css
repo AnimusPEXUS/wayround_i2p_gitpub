@@ -1,0 +1,316 @@
+body {
+    background: silver;
+    font-family: Arial;
+}
+
+.control_title_normal {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.inline {
+    display: inline;
+}
+
+pre.console_shot {
+    background: black;
+    color: #aaaaaa;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: "Fixed";
+    font-size: 12px;
+}
+
+pre.issue_description {
+    background: black;
+    color: #aaaaaa;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: "Fixed";
+    font-size: 12px;
+}
+
+/* PAGE ACTIONS */
+#page_actions_list {
+    background: white;
+    padding: 5px;
+    border: black solid 1px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.page_actions_list_item {
+    background: black;
+    display: inline-block;
+    border-radius: 3px;
+    margin: 3px 3px 3px 0px;
+    overflow: visible;
+}
+
+.page_actions_list_item a {
+    font-family: Helvetica;
+    font-size: 12px;
+    color: white;
+    text-decoration: none;
+    padding: 5px 10px;
+    text-align: center;
+    display: inline-block;
+}
+
+#actions_table {
+    width: 100%;
+}
+
+#actions_session_td {
+    text-align: right;
+}
+
+/* PROJECT VIEW PAGE */
+#project_page_issue_table {
+    width: 100%;
+    table-layout: auto;
+}
+
+#project_page_issue_table>tbody>tr>td {
+    padding: 0px;
+    vertical-align: top;
+}
+
+.issue_teaser_table {
+    width: 100%;
+    border: 1px transparent solid;
+    font-size: 12px;
+    text-align: center;
+}
+
+.issue_teaser_table>tbody>tr>td {
+    background: white;
+}
+
+.issue_teaser_table>tbody>tr>td>a {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 2px 0px 2px 0px;
+    text-decoration: none;
+}
+
+.issue_teaser_table>tbody>tr>td.right_issue_teaser_table_td {
+    border-radius: 0px 5px 5px 0px;
+}
+
+.issue_teaser_table>tbody>tr>td.left_issue_teaser_table_td {
+    border-radius: 5px 0px 0px 5px;
+}
+
+.issue_teaser_table>tbody>tr.priority1>td {
+    background: maroon;
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority1>td {
+    background: darkred;
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority1>td>a {
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority2>td {
+    background: firebrick;
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority2>td>a {
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority3>td {
+    background: crimson;
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority3>td>a {
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority4>td {
+    background: SandyBrown;
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority4>td>a {
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority5>td {
+    background: SpringGreen;
+    color: black;
+}
+
+.issue_teaser_table>tbody>tr.priority5>td>a {
+    color: black;
+}
+
+.issue_teaser_table>tbody>tr.priority6>td {
+    background: Aquamarine;
+    color: black;
+}
+
+.issue_teaser_table>tbody>tr.priority6>td>a {
+    color: black;
+}
+
+.issue_teaser_table>tbody>tr.priority7>td {
+    background: MediumTurquoise;
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority7>td>a {
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority8>td {
+    background: CadetBlue;
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority8>td>a {
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority9>td {
+    background: SteelBlue;
+    color: white;
+}
+
+.issue_teaser_table>tbody>tr.priority9>td>a {
+    color: white;
+}
+
+/* ROLES TABLES */
+#roles_table {
+    width: 100%;
+}
+
+#roles_table textarea {
+    width: 100%;
+    min-height: 300px;
+    border: 1px black solid;
+}
+
+/* ISSUE PAGE */
+#issue_page_project_info {
+    padding: 5px;
+    text-align: right;
+}
+
+#issue_page_project_title {
+    font-size: 16px;
+}
+
+#issue_page_issue_title {
+    font-size: 22px;
+    font-weight: bold;
+    display: inline;
+}
+
+#issue_page_issue_id {
+    font-size: 20px;
+    display: inline;
+}
+
+#issue_page_issue_view_main_div {
+    background: wheat;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    box-shadow: inset -2px -2px 10px -2px black;
+}
+
+#issue_page_issue_view_main_table {
+    width: 100%;
+}
+
+#issue_page_comments_and_updates {
+    margin-bottom: 10px;
+}
+
+#issue_page_updates_table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+#issue_page_updates_table>tbody>tr>td {
+    border: 1px solid black;
+    padding: 5px;
+}
+
+#issue_page_updates_table>tbody>tr>td.issue_page_table_credentials_column
+    {
+    vertical-align: top;
+}
+
+#issue_page_updates_table>tbody>tr>td.issue_page_table_details_column {
+    width: 100%;
+}
+
+.issue_page_updates_table_level2 {
+    width: 100%;
+}
+
+.issue_page_table_details_column_old {
+    background: black;
+    color: white;
+    padding: 3px;
+    border-radius: 3px 3px 3px 3px;
+}
+
+.issue_page_table_details_column_new {
+    background: green;
+    color: white;
+    padding: 3px;
+    border-radius: 3px 3px 3px 3px;
+}
+
+/* ACTIVITIES PAGE */
+#project_activity_table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+#project_activity_table>tbody>tr>td {
+    border: 1px solid black;
+    padding: 5px;
+}
+
+#project_activity_table>tbody>tr>td.project_activity_page_table_credentials_column
+    {
+    vertical-align: top;
+}
+
+#project_activity_table>tbody>tr>td.project_activity_page_table_details_column
+    {
+    width: 100%;
+}
+
+.project_activity_page_updates_table_level2 {
+    width: 100%;
+}
+
+.project_activity_page_table_details_column_old {
+    background: black;
+    color: white;
+    padding: 3px;
+    border-radius: 3px 3px 3px 3px;
+}
+
+.project_activity_page_table_details_column_new {
+    background: green;
+    color: white;
+    padding: 3px;
+    border-radius: 3px 3px 3px 3px;
+}
