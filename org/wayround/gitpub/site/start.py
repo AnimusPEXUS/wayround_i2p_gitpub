@@ -41,8 +41,14 @@ adds['xmpp_auth_info'] = auth_info
 adds['db_config'] = 'sqlite:///{}/db/database.sqlite'.format(wd)
 adds['db_echo'] = False
 adds['host'] = 'localhost'
-adds['port'] = 8080
+adds['port'] = 8084
 adds['main_admin'] = 'animus@wayround.org'
+adds['ssh_working_root_dir'] = os.path.join(wd, 'ssh_dir')
+adds['ssh_host_address'] = 'localhost'
+adds['ssh_host_port'] = 2121
+adds['host_key_privat_rsa_filename'] = \
+    os.path.join(wd, 'host_keys', 'host_rsa')
+
 
 commands = org.wayround.gitpub.commands.commands()
 

@@ -8,14 +8,17 @@ class JabberCommands:
         self._site = None
 
     def set_site(self, site):
-
         self._site = site
+
+    def set_ssh_git_host(self, ssh_git_host):
+        self._ssh_git_host = ssh_git_host
 
     def commands_dict(self):
         return dict(
             site=dict(
                 register=self.register,
                 login=self.login,
+                set_key=self.set_key,
                 help=self.help
                 ),
             me=dict(
@@ -121,6 +124,17 @@ class JabberCommands:
 
     def register(self, comm, opts, args, adds):
 
+        """
+        Register self or new user
+
+        [-r=role] [barejid]
+
+        -r=role - role. one of 'admin', 'moder', 'user', 'guest'. only admin can
+                  use this parameter
+
+        barejid - user jid to register. leave empty to register self.
+        """
+
         if not self._site:
             raise ValueError("use set_site() method")
 
@@ -170,11 +184,10 @@ class JabberCommands:
             pass
         else:
 
-            registrant_role = self._site.rtenv.modules[
-                self._site.ttm
-                ].get_site_role(
-                jid_to_reg
-                )
+            registrant_role = \
+                self._site.rtenv.modules[self._site.ttm].get_site_role(
+                    jid_to_reg
+                    )
 
             if (asker_jid == jid_to_reg
                 and roles['site_role'] != 'guest'):
@@ -183,6 +196,13 @@ class JabberCommands:
                     {'type': 'error',
                      'text': 'You already registered'}
                     )
+
+                if not self._ssh_git_host.user_is_exists(jid_to_reg):
+                    messages.append(
+                        {'type': 'info',
+                         'text': 'user not found in ssh git host. creating'}
+                        )
+                    self._ssh_git_host.user_create(jid_to_reg)
 
             elif registrant_role != None:
 
@@ -195,11 +215,19 @@ class JabberCommands:
                      }
                     )
 
+                if not self._ssh_git_host.user_is_exists(jid_to_reg):
+                    messages.append(
+                        {'type': 'info',
+                         'text': 'user not found in ssh git host. creating'}
+                        )
+                    self._ssh_git_host.user_create(jid_to_reg)
+
             else:
 
-                if ((roles['site_role'] == 'admin') or
-                    (roles['site_role'] != 'admin' and
-                     self._site.register_access_check(asker_jid))):
+                if ((roles['site_role'] == 'admin')
+                    or
+                    (roles['site_role'] != 'admin'
+                     and self._site.register_access_check(asker_jid))):
 
                     try:
                         self._site.rtenv.modules[self._site.ttm].add_site_role(
@@ -216,6 +244,9 @@ class JabberCommands:
                             {'type': 'info',
                              'text': 'registration successful'}
                             )
+
+                        self._ssh_git_host.user_create(jid_to_reg)
+
                 else:
                     messages.append(
                         {'type': 'error',
@@ -297,6 +328,47 @@ class JabberCommands:
 
         return ret
 
+    def set_key(self, comm, opts, args, adds):
+
+        if not self._site:
+            raise ValueError("use set_site() method")
+
+        ret = 0
+        asker_jid = adds['asker_jid']
+        stanza = adds['stanza']
+        messages = adds['messages']
+
+        roles = self._site.get_site_roles_for_jid(asker_jid)
+
+        error = False
+
+        msg_msg_lines = stanza.get_body()[0].get_text().splitlines()
+
+        msg = '\n'.join(msg_msg_lines[1:])
+
+        who = asker_jid
+
+        if '-j' in opts:
+            if roles['site_role'] != 'admin':
+                messages.append(
+                    {
+                     'type': 'error',
+                     'text': "Only admin allowed to use parameter -j"
+                     }
+                    )
+            else:
+                who = opts['-j']
+
+        if not error:
+            self._site.rtenv.modules[self._site.ttm].user_set_public_key(
+                who, msg
+                )
+
+        if error:
+            ret = 1
+
+        return ret
+
     def help(self, comm, opts, args, adds):
 
         if not self._site:
@@ -329,11 +401,6 @@ register [-r=ROLE] [JID]      register [self] or [somebody else](only admin can
 
                               register will succeed only if it is not
                               prohibited on site.
-
-login SESSION_COOKIE          make user with named SESSION_COOKIE logged in on
-                              site
-                              (only registered user can be logged in)
-
 """
         ret_stanza.body = [
             org.wayround.xmpp.core.MessageBody(

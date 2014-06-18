@@ -3,10 +3,10 @@ import logging
 import threading
 
 import org.wayround.softengine.rtenv
-import org.wayround.tasktracker.jabber_commands
-import org.wayround.tasktracker.modules
+import org.wayround.gitpub.jabber_commands
+import org.wayround.gitpub.modules
 import org.wayround.xmpp.client_bot
-import org.wayround.xmpp.core
+import org.wayround.sshgithost.sshgithost
 
 
 def commands():
@@ -28,6 +28,10 @@ def site_start(comm, opts, args, adds):
     host = adds['host']
     port = adds['port']
     main_admin = adds['main_admin']
+    ssh_working_root_dir = adds['ssh_working_root_dir']
+    ssh_host_address = adds['ssh_host_address']
+    ssh_host_port = adds['ssh_host_port']
+    host_key_privat_rsa_filename = adds['host_key_privat_rsa_filename']
 
     jid = adds['jid']
     xmpp_connection_info = adds['xmpp_connection_info']
@@ -42,7 +46,7 @@ def site_start(comm, opts, args, adds):
 
     rtenv = org.wayround.softengine.rtenv.RuntimeEnvironment(db)
 
-    org.wayround.tasktracker.modules.TaskTracker(rtenv)
+    org.wayround.gitpub.modules.GitPub(rtenv)
 
     exit_event = threading.Event()
 
@@ -50,11 +54,18 @@ def site_start(comm, opts, args, adds):
 
     rtenv.db.create_all()
 
-    commands = org.wayround.tasktracker.jabber_commands.JabberCommands()
+    commands = org.wayround.gitpub.jabber_commands.JabberCommands()
+
+    ssh_git_host = org.wayround.sshgithost.sshgithost.SSHGitHost(
+        ssh_working_root_dir,
+        ssh_host_address,
+        ssh_host_port,
+        host_key_privat_rsa_filename
+        )
 
     bot = org.wayround.xmpp.client_bot.Bot()
 
-    site = org.wayround.tasktracker.env.Environment(
+    site = org.wayround.gitpub.env.Environment(
         rtenv,
         host=host,
         port=port,
@@ -67,15 +78,21 @@ def site_start(comm, opts, args, adds):
         ).start()
 
     commands.set_site(site)
+    commands.set_ssh_git_host(ssh_git_host)
 
     bot.set_commands(commands.commands_dict())
     site.set_bot(bot)
+    site.set_ssh_git_host(ssh_git_host)
 
     threading.Thread(
         name="Bot Thread",
         target=bot.connect,
         args=(jid, xmpp_connection_info, xmpp_auth_info,),
         ).start()
+
+    print("starting ssh service")
+    ssh_git_host.start()
+    print("started ssh service")
 
     try:
         exit_event.wait()
@@ -86,6 +103,8 @@ def site_start(comm, opts, args, adds):
 
     exit_event.set()
 
+    logging.debug("starting ssh stop")
+    ssh_git_host.stop()
     logging.debug("starting bot stop")
     bot.disconnect()
     logging.debug("starting site stop")

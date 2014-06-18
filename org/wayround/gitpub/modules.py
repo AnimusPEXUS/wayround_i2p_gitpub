@@ -11,17 +11,9 @@ import sqlalchemy.orm.exc
 import org.wayround.softengine.rtenv
 import org.wayround.gitpub.env
 
-
-class WrongPageAction(Exception):
-    pass
-
-
-class CreatingAlreadyExistingProject(Exception):
-    pass
-
-
-class EditingNotExistingProject(Exception):
-    pass
+AR_NONE = 0
+AR_READ = 1
+AR_FULL = 2
 
 
 class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
@@ -33,10 +25,14 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         self.session_lifetime = 24 * 60 * 60
 
         self.site_roles = [
-            'admin', 'moder', 'user', 'guest'
+            'admin', 'user', 'guest'
             ]
 
-        self.project_roles = [
+        self.home_roles = [
+            'admin', 'user', 'guest'
+            ]
+
+        self.repository_roles = [
             'admin', 'user', 'guest'
             ]
 
@@ -92,31 +88,57 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
                 default=''
                 )
 
-        class Project(self.rtenv.db.db_base):
+        class HomeSetting(self.rtenv.db.db_base):
 
-            __tablename__ = self.module_name + '_Projects'
+            __tablename__ = self.module_name + '_HomeSettings'
 
-            name = sqlalchemy.Column(
+            home = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
                 primary_key=True
                 )
 
-            title = sqlalchemy.Column(
-                sqlalchemy.UnicodeText,
+            enabled = sqlalchemy.Column(
+                sqlalchemy.Boolean,
                 nullable=False,
-                default='Name not set'
+                default=False
                 )
 
-            creation_date = sqlalchemy.Column(
-                sqlalchemy.DateTime,
+            guests_can_view = sqlalchemy.Column(
+                sqlalchemy.Boolean,
+                nullable=False,
+                default=False
+                )
+
+        class RepositorySetting(self.rtenv.db.db_base):
+
+            __tablename__ = self.module_name + '_RepositorySettings'
+
+            reid = sqlalchemy.Column(
+                sqlalchemy.Integer,
+                primary_key=True,
+                autoincrement=True
+                )
+
+            home = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=False
+                )
+
+            repository = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=False
+                )
+
+            title = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
                 nullable=True,
                 default=None
                 )
 
             description = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
-                nullable=False,
-                default='Name not set'
+                nullable=True,
+                default=None
                 )
 
             guests_access_allowed = sqlalchemy.Column(
@@ -139,17 +161,60 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             role = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
                 nullable=False,
-                default='user'
+                default='guest'
                 )
 
-        class ProjectRole(self.rtenv.db.db_base):
+            enabled = sqlalchemy.Column(
+                sqlalchemy.Boolean,
+                nullable=False,
+                default=True
+                )
 
-            __tablename__ = self.module_name + '_ProjectRoles'
+        class HomeRole(self.rtenv.db.db_base):
 
-            prid = sqlalchemy.Column(
+            __tablename__ = self.module_name + '_HomeRoles'
+
+            hrid = sqlalchemy.Column(
                 sqlalchemy.Integer,
                 primary_key=True,
                 autoincrement=True
+                )
+
+            home = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=False
+                )
+
+            jid = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=True,
+                default=None
+                )
+
+            role = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=False,
+                default='read'
+                )
+
+        class RepositoryRole(self.rtenv.db.db_base):
+
+            __tablename__ = self.module_name + '_RepositoryRoles'
+
+            rrid = sqlalchemy.Column(
+                sqlalchemy.Integer,
+                primary_key=True,
+                autoincrement=True
+                )
+
+            home = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=False
+                )
+
+            repository = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=False
                 )
 
             jid = sqlalchemy.Column(
@@ -164,18 +229,50 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
                 default=None
                 )
 
-            project_name = sqlalchemy.Column(
+        class PublicKey(self.rtenv.db.db_base):
+
+            __tablename__ = self.module_name + '_PublicKeys'
+
+            jid = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
-                nullable=False,
-                default=''
+                primary_key=True,
+                nullable=True,
+                default=None
+                )
+
+            msg = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=True,
+                default=None
+                )
+
+            msg_type_part = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=True,
+                default=None
+                )
+
+            msg_base64_part = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=True,
+                default=None
+                )
+
+            msg_jid_part = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=True,
+                default=None
                 )
 
         self.rtenv.models[self.module_name] = {
-            'Project':       Project,
-            'SiteRole':      SiteRole,
-            'ProjectRole':   ProjectRole,
-            'Session':       Session,
-            'SiteSetting':   SiteSetting,
+            'Session':           Session,
+            'SiteSetting':       SiteSetting,
+            'HomeSetting':       HomeSetting,
+            'RepositorySetting': RepositorySetting,
+            'SiteRole':          SiteRole,
+            'HomeRole':          HomeRole,
+            'RepositoryRole':    RepositoryRole,
+            'PublicKey':         PublicKey
             }
 
         self.rtenv.templates[self.module_name] = {}
@@ -183,10 +280,10 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         for i in [
             'html',
             'admin',
-            'project_page',
-            'project_list',
-            'project_roles',
-            'edit_project',
+            'repository_page',
+            'repository_list',
+            'repository_roles',
+            'edit_repository',
             'actions',
             'session',
             'site_settings',
@@ -217,7 +314,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             blocked=blocked
             )
 
-    def project_roles_tpl(
+    def repository_roles_tpl(
         self,
         admins,
         moders,
@@ -229,63 +326,60 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         site_blocked,
         god
         ):
-        return self.rtenv.templates[self.module_name]['project_roles'].render(
-            admins=admins,
-            moders=moders,
-            users=users,
-            blocked=blocked,
-            site_admins=site_admins,
-            site_moders=site_moders,
-            site_users=site_users,
-            site_blocked=site_blocked,
-            god=god
-            )
+        return \
+            self.rtenv.templates[self.module_name]['repository_roles'].render(
+                admins=admins,
+                moders=moders,
+                users=users,
+                blocked=blocked,
+                site_admins=site_admins,
+                site_moders=site_moders,
+                site_users=site_users,
+                site_blocked=site_blocked,
+                god=god
+                )
 
     def site_settings_tpl(
         self,
         site_title,
         site_description,
         user_can_register_self,
-        user_can_create_projects
+        user_can_create_repositories
         ):
         return self.rtenv.templates[self.module_name]['site_settings'].render(
             site_title=site_title,
             site_description=site_description,
             user_can_register_self=user_can_register_self,
-            user_can_create_projects=user_can_create_projects
+            user_can_create_repositories=user_can_create_repositories
             )
 
-    def register_tpl(self):
-        return self.rtenv.templates[self.module_name]['register'].render()
-
-    def login_tpl(self):
-        return self.rtenv.templates[self.module_name]['login'].render()
-
-    def project_page_tpl(
+    def repository_page_tpl(
         self,
-        project_name,
+        repository_name,
         open_issue_table='',
         closed_issue_table='',
         deleted_issue_table=''
         ):
-        return self.rtenv.templates[self.module_name]['project_page'].render(
-            project_name=project_name,
-            open_issue_table=open_issue_table,
-            closed_issue_table=closed_issue_table,
-            deleted_issue_table=deleted_issue_table
-            )
+        return \
+            self.rtenv.templates[self.module_name]['repository_page'].render(
+                repository_name=repository_name,
+                open_issue_table=open_issue_table,
+                closed_issue_table=closed_issue_table,
+                deleted_issue_table=deleted_issue_table
+                )
 
-    def project_list_tpl(self, projects, rts_object):
-        return self.rtenv.templates[self.module_name]['project_list'].render(
-            projects=projects,
-            rts_object=rts_object
-            )
+    def repository_list_tpl(self, repositories, rts_object):
+        return \
+            self.rtenv.templates[self.module_name]['repository_list'].render(
+                repositories=repositories,
+                rts_object=rts_object
+                )
 
     def actions_tpl(self, actions, session_actions):
 
         for i in actions:
             if not isinstance(i, org.wayround.gitpub.env.PageAction):
-                raise WrongPageAction("Wrong page action type")
+                raise Exception("Wrong page action type")
 
         return self.rtenv.templates[self.module_name]['actions'].render(
             actions=actions,
@@ -306,7 +400,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             rts_object=rts_object
             )
 
-    def edit_project_tpl(
+    def edit_repository_tpl(
         self,
         mode,
         name='',
@@ -318,436 +412,20 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         if not mode in ['new', 'edit']:
             raise ValueError("Wrong mode value: `{}'".format(mode))
 
-        return self.rtenv.templates[self.module_name]['edit_project'].render(
-            mode=mode,
-            name=name,
-            title=title,
-            description=description,
-            guests_access_allowed=guests_access_allowed
-            )
+        return \
+            self.rtenv.templates[self.module_name]['edit_repository'].render(
+                mode=mode,
+                name=name,
+                title=title,
+                description=description,
+                guests_access_allowed=guests_access_allowed
+                )
 
     def css(self, filename):
         return bottle.static_file(filename, root=self.css_dir)
 
     def js(self, filename):
         return bottle.static_file(filename, root=self.js_dir)
-
-    def get_random_bytes(self):
-
-        ret = []
-        pool = range(256)
-
-        random.seed()
-
-        i = 0
-        while i != 512:
-            ret.append(random.choice(pool))
-            i += 1
-
-        return bytes(ret)
-
-    def hash_for_get_random_bytes(self, buffer):
-        h = hashlib.sha512()
-        h.update(buffer)
-        ret = h.hexdigest()
-        return ret
-
-    def get_random_hash(self):
-        return self.hash_for_get_random_bytes(self.get_random_bytes())
-
-    def _get_session_by_x(self, data, what):
-
-        if not what in ['jid', 'cookie']:
-            raise ValueError("Wrong `what' parameter")
-
-        self.cleanup_sessions()
-
-        ret = None
-
-        try:
-            if what == 'cookie':
-                ret = self.rtenv.db.sess.query(
-                    self.rtenv.models[self.module_name]['Session']
-                    ).filter_by(session_cookie=data).one()
-
-            if what == 'jid':
-                ret = self.rtenv.db.sess.query(
-                    self.rtenv.models[self.module_name]['Session']
-                    ).filter_by(jid=data).one()
-
-        except sqlalchemy.orm.exc.NoResultFound:
-            pass
-        else:
-
-            if ret.session_cookie == None or ret.session_valid_till == None:
-                ret = None
-
-        return ret
-
-    def get_session_by_cookie(self, cookie):
-        return self._get_session_by_x(cookie, 'cookie')
-
-    def get_session_by_jid(self, jid):
-        return self._get_session_by_x(jid, 'jid')
-
-    def new_session(self):
-
-        new_hash = self.get_random_hash()
-
-        while self.get_session_by_cookie(new_hash) != None:
-            new_hash = self.get_random_hash()
-
-        s = self.rtenv.models[self.module_name]['Session']()
-        s.session_cookie = new_hash
-
-        self.rtenv.db.sess.add(s)
-        self.rtenv.db.sess.commit()
-        self.renew_session(s)
-
-        return s
-
-    def renew_session(self, session):
-        """
-        Keeps alive already existing session
-        """
-
-        if not isinstance(
-            session, self.rtenv.models[self.module_name]['Session']
-            ):
-            raise TypeError(
-                "`session' parameter must be of type `{}', but it is `{}'".\
-                    format(
-                        type(
-                            self.rtenv.models[self.module_name]['Session']
-                            ),
-                        session
-                        )
-                )
-
-        session.session_valid_till = (
-            datetime.datetime.now() +
-            datetime.timedelta(seconds=self.session_lifetime)
-            )
-
-        self.rtenv.db.sess.commit()
-
-        return
-
-    def assign_jid_to_session(self, session, jid):
-
-        sessions = self.rtenv.db.sess.query(
-            self.rtenv.models[self.module_name]['Session']
-            ).all()
-
-        for i in sessions:
-            if i.jid == jid:
-                self.rtenv.db.sess.delete(i)
-
-        session.jid = jid
-
-        self.rtenv.db.sess.commit()
-
-        return
-
-    def cleanup_sessions(self):
-
-        sessions = self.rtenv.db.sess.query(
-            self.rtenv.models[self.module_name]['Session']
-            ).all()
-
-        for i in sessions[:]:
-            if i.session_cookie == None or i.session_valid_till == None:
-                self.rtenv.db.sess.delete(i)
-                sessions.remove(i)
-
-        for i in sessions[:]:
-            if i.session_valid_till < datetime.datetime.now():
-                self.rtenv.db.sess.delete(i)
-                sessions.remove(i)
-
-        for i in sessions[:]:
-            if i.session_valid_till > (
-                datetime.datetime.now() +
-                datetime.timedelta(
-                    seconds=self.session_lifetime
-                    )
-                ):
-
-                self.rtenv.db.sess.delete(i)
-                sessions.remove(i)
-
-        self.rtenv.db.sess.commit()
-
-        return
-
-    def get_projects(self):
-        return self.rtenv.db.sess.query(
-            self.rtenv.models[self.module_name]['Project']
-            ).all()
-
-    def get_project(self, name):
-        p = None
-        try:
-            p = self.rtenv.db.sess.query(
-                self.rtenv.models[self.module_name]['Project']
-                ).filter_by(name=name).one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            pass
-
-        return p
-
-    def new_project(self, name, title, description, guests_access_allowed):
-
-        p = None
-        try:
-            p = self.rtenv.db.sess.query(
-                self.rtenv.models[self.module_name]['Project']
-                ).filter_by(name=name).one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            pass
-
-        if not p:
-            p = self.rtenv.models[self.module_name]['Project']()
-            p.name = name
-            p.title = title
-            p.description = description
-            p.guests_access_allowed = guests_access_allowed
-            self.rtenv.db.sess.add(p)
-
-        else:
-            raise CreatingAlreadyExistingProject(
-                "Trying to create already existing project"
-                )
-
-        self.rtenv.db.sess.commit()
-
-        return p
-
-    def edit_project(self, name, title, description, guests_access_allowed):
-
-        p = None
-        try:
-            p = self.get_project(name)
-
-        except sqlalchemy.orm.exc.NoResultFound:
-            pass
-
-        if not p:
-            raise EditingNotExistingProject(
-                "Trying to edit non-existing project"
-                )
-
-        else:
-            p.title = title
-            p.description = description
-            p.guests_access_allowed = guests_access_allowed
-
-        self.rtenv.db.sess.commit()
-
-        return p
-
-    def get_site_role(self, jid):
-
-        ret = None
-
-        res = None
-
-        try:
-            res = self.rtenv.db.sess.query(
-                self.rtenv.models[self.module_name]['SiteRole']
-                ).filter_by(jid=jid).one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            pass
-        else:
-            ret = res
-
-            if not ret.role in self.site_roles:
-
-                self.rtenv.db.sess.delete(ret)
-
-                ret = None
-
-                self.rtenv.db.sess.commit()
-
-        return ret
-
-    def get_site_roles(self):
-
-        ret = self.rtenv.db.sess.query(
-            self.rtenv.models[self.module_name]['SiteRole']
-            ).all()
-
-        for i in ret[:]:
-            if not i.role in self.site_roles:
-
-                self.rtenv.db.sess.delete(i)
-
-                while i in ret:
-                    ret.remove(i)
-
-        self.rtenv.db.sess.commit()
-
-        return ret
-
-    def get_site_roles_dict(self):
-
-        ret = {}
-
-        res = self.get_site_roles()
-
-        for i in res:
-            ret[i.jid] = i.role
-
-        return ret
-
-    def set_site_roles(self, roles):
-
-        old_roles = self.get_site_roles()
-
-        for i in old_roles:
-            if not i.jid in roles.keys():
-                self.rtenv.db.sess.delete(i)
-
-        for i in roles.keys():
-
-            role_found = False
-
-            for j in old_roles:
-
-                if j.jid == i:
-                    role_found = j
-                    break
-
-            if role_found == False:
-
-                role = self.rtenv.models[self.module_name]['SiteRole']()
-
-                role.jid = i
-                role.role = roles[i]
-
-                self.rtenv.db.sess.add(role)
-
-            else:
-
-                role = role_found
-
-                role.role = roles[i]
-
-        self.rtenv.db.sess.commit()
-
-        return
-
-    def add_site_role(self, jid, role='user'):
-
-        siterole = self.rtenv.models[self.module_name]['SiteRole']()
-
-        siterole.jid = jid
-        siterole.role = role
-
-        self.rtenv.db.sess.add(siterole)
-
-        self.rtenv.db.sess.commit()
-
-        return
-
-    def get_project_role(self, jid, project_name):
-
-        ret = None
-
-        try:
-            ret = self.rtenv.db.sess.query(
-                self.rtenv.models[self.module_name]['ProjectRole']
-                ).filter_by(jid=jid, project_name=project_name).one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            pass
-
-        return ret
-
-    def get_project_roles_of_jid(self, jid):
-
-        ret = self.rtenv.db.sess.query(
-            self.rtenv.models[self.module_name]['ProjectRole']
-            ).filter_by(jid=jid).all()
-
-        return ret
-
-    def get_project_roles_of_jid_dict(self, jid):
-
-        roles = self.get_project_roles_of_jid(jid)
-
-        ret = {}
-
-        for i in roles:
-            ret[i.project_name] = i.role
-
-        return ret
-
-    def get_project_roles(self, project_name):
-
-        ret = self.rtenv.db.sess.query(
-            self.rtenv.models[self.module_name]['ProjectRole']
-            ).filter_by(project_name=project_name).all()
-
-        for i in ret[:]:
-            if not i.role in self.project_roles:
-
-                self.rtenv.db.sess.delete(i)
-
-                while i in ret:
-                    ret.remove(i)
-
-        self.rtenv.db.sess.commit()
-
-        return ret
-
-    def get_project_roles_dict(self, project_name):
-
-        roles = self.get_project_roles(project_name)
-
-        ret = {}
-
-        for i in roles:
-            ret[i.jid] = i.role
-
-        return ret
-
-    def set_project_roles(self, project_name, roles):
-
-        old_roles = self.get_project_roles(project_name)
-
-        for i in old_roles:
-            if not i.jid in roles.keys():
-                self.rtenv.db.sess.delete(i)
-
-        for i in roles.keys():
-
-            role_found = False
-
-            for j in old_roles:
-
-                if j.jid == i:
-                    role_found = j
-                    break
-
-            if role_found == False:
-
-                role = self.rtenv.models[self.module_name]['ProjectRole']()
-
-                role.jid = i
-                role.role = roles[i]
-                role.project_name = project_name
-
-                self.rtenv.db.sess.add(role)
-
-            else:
-
-                role = role_found
-
-                role.role = roles[i]
-
-        self.rtenv.db.sess.commit()
-
-        return
 
     def get_site_setting(self, name, default=None):
 
@@ -768,14 +446,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     def set_site_setting(self, name, value):
 
-        res = None
-
-        try:
-            res = self.rtenv.db.sess.query(
-                self.rtenv.models[self.module_name]['SiteSetting']
-                ).filter_by(name=name).one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            pass
+        res = self.get_site_setting(name, None)
 
         if res == None:
             res = self.rtenv.models[self.module_name]['SiteSetting']()
@@ -789,3 +460,602 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         self.rtenv.db.sess.commit()
 
         return
+
+    def list_homes(self):
+
+        ret = set()
+
+        try:
+            p = self.rtenv.db.sess.query(
+                self.rtenv.models[self.module_name]['HomeSetting']
+                ).all()
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+
+        else:
+            for i in p:
+                ret.add(i.home)
+
+        return sorted(list(ret))
+
+    def get_home_setting(self, home):
+        p = None
+        try:
+            p = self.rtenv.db.sess.query(
+                self.rtenv.models[self.module_name]['HomeSetting']
+                ).filter_by(home=home).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+
+        return p
+
+    def set_home_setting(self, data):
+
+        p = self.get_home_setting(data.home)
+
+        if p == None:
+            self.rtenv.db.sess.add(data)
+
+        self.rtenv.db.sess.commit()
+
+        return
+
+    def list_repositories(self, home):
+
+        ret = set()
+
+        try:
+            p = self.rtenv.db.sess.query(
+                self.rtenv.models[self.module_name]['RepositorySetting']
+                ).filter_by(home=home).all()
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+
+        else:
+            for i in p:
+                ret.add(i.repository)
+
+        return sorted(list(ret))
+
+    def get_repository_setting(self, home, repository):
+        p = None
+        try:
+            p = self.rtenv.db.sess.query(
+                self.rtenv.models[self.module_name]['RepositorySetting']
+                ).filter_by(
+                    home=home,
+                    repository=repository
+                    ).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+
+        return p
+
+    def set_repository_setting(self, data):
+
+        p = self.get_repository_setting(data.home, data.repository)
+
+        if p == None:
+            self.rtenv.db.sess.add(data)
+
+        self.rtenv.db.sess.commit()
+
+        return
+
+    def dict_site_roles(self):
+
+        ret = {}
+
+        try:
+            res = self.rtenv.db.sess.query(
+                self.rtenv.models[self.module_name]['SiteRole']
+                ).all()
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+        else:
+
+            for i in res:
+                ret[i.jid] = i.role
+
+        return ret
+
+    def get_site_role(self, jid):
+
+        ret = 'guest'
+
+        try:
+            res = self.rtenv.db.sess.query(
+                self.rtenv.models[self.module_name]['SiteRole']
+                ).filter_by(jid=jid).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+        else:
+            ret = res.role
+
+            if not ret in self.site_roles or ret == 'guest':
+
+                self.rtenv.db.sess.delete(res)
+                self.rtenv.db.sess.commit()
+
+                ret = 'guest'
+
+        return ret
+
+    def set_site_role(self, jid, role):
+
+        if role in [None, 'guest']:
+
+            try:
+                res = self.rtenv.db.sess.query(
+                    self.rtenv.models[self.module_name]['SiteRole']
+                    ).filter_by(jid=jid).all()
+            except sqlalchemy.orm.exc.NoResultFound:
+                pass
+            else:
+                for i in res:
+                    self.rtenv.db.sess.delete(i)
+                self.rtenv.db.sess.commit()
+
+        else:
+
+            try:
+                res = self.rtenv.db.sess.query(
+                    self.rtenv.models[self.module_name]['SiteRole']
+                    ).filter_by(jid=jid).all()
+            except sqlalchemy.orm.exc.NoResultFound:
+                pass
+
+            len_res = len(res)
+
+            p = None
+
+            if len_res == 0:
+
+                p = self.rtenv.models[self.module_name]['SiteRole']()
+                p.jid = jid
+                p.enabled = True
+                self.rtenv.db.sess.add(p)
+
+            else:
+
+                for i in res[1:]:
+                    self.rtenv.db.sess.delete(i)
+                self.rtenv.db.sess.commit()
+
+                p = res[0]
+
+            p.role = role
+
+            self.rtenv.db.sess.commit()
+
+        return
+
+    def del_site_role(self, jid):
+        self.set_site_role(jid, None)
+        return
+
+    def dict_home_roles(self, home):
+
+        ret = {}
+
+        try:
+            res = self.rtenv.db.sess.query(
+                self.rtenv.models[self.module_name]['HomeRole']
+                ).filter_by(home=home).all()
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+        else:
+
+            for i in res:
+                ret[i.jid] = i.role
+
+        return ret
+
+    def get_home_role(self, home, jid):
+
+        ret = 'guest'
+
+        if home == jid:
+            ret = 'admin'
+        else:
+
+            try:
+                res = self.rtenv.db.sess.query(
+                    self.rtenv.models[self.module_name]['HomeRole']
+                    ).filter_by(home=home, jid=jid).one()
+            except sqlalchemy.orm.exc.NoResultFound:
+                pass
+            else:
+                ret = res.role
+
+                if not ret in self.home_roles or ret == 'guest':
+
+                    self.rtenv.db.sess.delete(res)
+                    self.rtenv.db.sess.commit()
+
+                    ret = 'guest'
+
+            return ret
+
+    def set_home_role(self, home, jid, role):
+
+        if role in [None, 'guest']:
+
+            try:
+                res = self.rtenv.db.sess.query(
+                    self.rtenv.models[self.module_name]['HomeRole']
+                    ).filter_by(home=home, jid=jid).all()
+            except sqlalchemy.orm.exc.NoResultFound:
+                pass
+            else:
+                for i in res:
+                    self.rtenv.db.sess.delete(i)
+                self.rtenv.db.sess.commit()
+
+        else:
+
+            try:
+                res = self.rtenv.db.sess.query(
+                    self.rtenv.models[self.module_name]['HomeRole']
+                    ).filter_by(home=home, jid=jid).all()
+            except sqlalchemy.orm.exc.NoResultFound:
+                pass
+
+            len_res = len(res)
+
+            p = None
+
+            if len_res == 0:
+
+                p = self.rtenv.models[self.module_name]['HomeRole']()
+                p.home = home
+                p.jid = jid
+                self.rtenv.db.sess.add(p)
+
+            else:
+
+                for i in res[1:]:
+                    self.rtenv.db.sess.delete(i)
+                self.rtenv.db.sess.commit()
+
+                p = res[0]
+
+            p.role = role
+
+            self.rtenv.db.sess.commit()
+
+        return
+
+    def del_home_role(self, home, jid):
+        self.set_home_role(home, jid, None)
+        return
+
+    def dict_repository_roles(self, home, repository):
+
+        ret = {}
+
+        try:
+            res = self.rtenv.db.sess.query(
+                self.rtenv.models[self.module_name]['RepositoryRole']
+                ).filter_by(
+                    home=home,
+                    repository=repository
+                    ).all()
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+        else:
+
+            for i in res:
+                ret[i.jid] = i.role
+
+        return ret
+
+    def get_repository_role(self, home, repository, jid):
+
+        ret = 'guest'
+
+        if home == jid:
+            ret = 'admin'
+        else:
+
+            try:
+                res = self.rtenv.db.sess.query(
+                    self.rtenv.models[self.module_name]['RepositoryRole']
+                    ).filter_by(
+                        home=home,
+                        repository=repository,
+                        jid=jid
+                        ).one()
+            except sqlalchemy.orm.exc.NoResultFound:
+                pass
+            else:
+                ret = res.role
+
+                if not ret in self.repository_roles or ret == 'guest':
+
+                    self.rtenv.db.sess.delete(res)
+                    self.rtenv.db.sess.commit()
+
+                    ret = 'guest'
+
+            return ret
+
+    def set_repository_role(self, home, repository, jid, role):
+
+        if role in [None, 'guest']:
+
+            try:
+                res = self.rtenv.db.sess.query(
+                    self.rtenv.models[self.module_name]['RepositoryRole']
+                    ).filter_by(
+                        home=home,
+                        repository=repository,
+                        jid=jid
+                        ).all()
+            except sqlalchemy.orm.exc.NoResultFound:
+                pass
+            else:
+                for i in res:
+                    self.rtenv.db.sess.delete(i)
+                self.rtenv.db.sess.commit()
+
+        else:
+
+            try:
+                res = self.rtenv.db.sess.query(
+                    self.rtenv.models[self.module_name]['RepositoryRole']
+                    ).filter_by(
+                        home=home,
+                        repository=repository,
+                        jid=jid
+                        ).all()
+            except sqlalchemy.orm.exc.NoResultFound:
+                pass
+
+            len_res = len(res)
+
+            p = None
+
+            if len_res == 0:
+
+                p = self.rtenv.models[self.module_name]['RepositoryRole']()
+                p.home = home
+                p.repository = repository
+                p.jid = jid
+                self.rtenv.db.sess.add(p)
+
+            else:
+
+                for i in res[1:]:
+                    self.rtenv.db.sess.delete(i)
+                self.rtenv.db.sess.commit()
+
+                p = res[0]
+
+            p.role = role
+
+            self.rtenv.db.sess.commit()
+
+        return
+
+    def del_repository_role(self, repository, jid):
+        self.set_repository_role(repository, jid, None)
+        return
+
+    def new_repository(self, name, title, description, guests_access_allowed):
+
+        p = None
+        try:
+            p = self.rtenv.db.sess.query(
+                self.rtenv.models[self.module_name]['Repository']
+                ).filter_by(name=name).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+
+        if not p:
+            p = self.rtenv.models[self.module_name]['Repository']()
+            p.name = name
+            p.title = title
+            p.description = description
+            p.guests_access_allowed = guests_access_allowed
+            self.rtenv.db.sess.add(p)
+
+        else:
+            raise Exception(
+                "Trying to create already existing repository"
+                )
+
+        self.rtenv.db.sess.commit()
+
+        return p
+
+    def edit_repository(self, name, title, description, guests_access_allowed):
+
+        p = None
+        try:
+            p = self.get_repository(name)
+
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+
+        if not p:
+            raise Exception(
+                "Trying to edit non-existing repository"
+                )
+
+        else:
+            p.title = title
+            p.description = description
+            p.guests_access_allowed = guests_access_allowed
+
+        self.rtenv.db.sess.commit()
+
+        return p
+
+    def user_get_public_key(self, user_name):
+        ret = None
+        try:
+            res = self.rtenv.db.sess.query(
+                self.rtenv.models[self.module_name]['PublicKey']
+                ).filter_by(jid=user_name).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+        else:
+            ret = res
+        return ret
+
+    def user_is_has_public_key(self, user_name):
+
+        ret = False
+
+        pkey = self.user_get_public_key(user_name)
+
+        if pkey != None:
+            ret = True
+
+        return ret
+
+    def user_is_correct_public_key_data(self, user_name):
+
+        ret = False
+
+        pkey = self.user_get_public_key(user_name)
+
+        if pkey != None:
+            parsed_msg = pkey.msg.split()
+
+            error = False
+
+            if parsed_msg[0] != pkey.msg_type_part:
+                error = True
+
+            if parsed_msg[1] != pkey.msg_base64_part:
+                error = True
+
+            if parsed_msg[2] != pkey.msg_jid_part:
+                error = True
+
+            # TODO: add more checks
+
+            if not error:
+                ret = True
+
+        return ret
+
+    def user_set_public_key(self, user_name, msg):
+
+        if self.user_is_has_public_key(user_name):
+            self.user_del_public_key(user_name)
+
+        ret = 0
+        parsed_msg = msg.split()
+
+        if len(parsed_msg) != 3:
+            ret = 2
+        else:
+            pk = self.rtenv.models[self.module_name]['PublicKey']()
+            pk.jid = user_name
+            pk.msg = msg
+            pk.msg_type_part = parsed_msg[0]
+            pk.msg_base64_part = parsed_msg[1]
+            pk.msg_jid_part = parsed_msg[2]
+
+            self.rtenv.db.sess.add(pk)
+
+            self.rtenv.db.sess.commit()
+
+        if not self.user_is_correct_public_key_data(user_name):
+            ret = 1
+
+        return ret
+
+    def user_del_public_key(self, user_name):
+        ret = 0
+        pk = self.user_get_public_key(user_name)
+
+        if pk == None:
+            ret = 1
+        else:
+            self.rtenv.db.sess.delete(pk)
+            self.rtenv.db.sess.commit()
+
+        return ret
+
+    def username_get_by_base64(self, type_, base64):
+
+        res = self.rtenv.db.sess.query(
+            self.rtenv.models[self.module_name]['PublicKey']
+            ).\
+            filter_by(
+                msg_type_part=type_,
+                msg_base64_part=base64
+                ).all()
+
+        ret = set()
+
+        for i in res:
+            ret.add(i.jid)
+
+        return sorted(list(ret))
+
+    def get_role(
+        self, subject_jid, home_level=None, repo_level=None
+        ):
+
+        subject_jid_site_role = self.get_site_role(subject_jid)
+
+        if subject_jid_site_role == 'admin':
+            ret = 'admin'
+
+        else:
+
+            if home_level == repo_level == None:
+                ret = subject_jid_site_role
+
+            elif home_level != None and repo_level == None:
+                pass
+            elif home_level != None and repo_level != None:
+                self.get_repository_role(subject_jid, repo_level)
+
+        return ret
+
+    def get_access_right(
+        self, subject_jid, home_level=None, repo_level=None
+        ):
+
+        ret = AR_NONE
+
+        subject_jid_site_role = self.get_site_role(subject_jid)
+
+        if subject_jid_site_role == 'admin':
+            ret = AR_FULL
+
+        else:
+
+            if home_level == repo_level == None:
+                if subject_jid_site_role == 'guest':
+                    if self.get_site_setting('guest_can_read_index', False):
+                        ret = AR_READ
+
+                if subject_jid_site_role == 'user':
+                    ret = AR_READ
+
+            elif home_level != None and repo_level == None:
+
+                if home_level == subject_jid:
+                    ret = AR_FULL
+                else:
+                    hs = self.get_home_setting(home_level)
+
+                    if hs != None and hs.guests_can_view:
+                        ret = AR_READ
+                    else:
+                        ret = AR_NONE
+
+            elif home_level != None and repo_level != None:
+                pass
+
+            else:
+                ret = 'guest'
+
+        return ret
