@@ -4,19 +4,13 @@ import urllib.parse
 
 import bottle
 
-#bottle.Request.MEMFILE_MAX = 10 * 1024 * 1024
-#bottle.Request.MAX_PARAMS = 100
-#bottle.request.MEMFILE_MAX = 10 * 1024 * 1024
-#bottle.request.MAX_PARAMS = 100
+# bottle.Request.MEMFILE_MAX = 10 * 1024 * 1024
+# bottle.Request.MAX_PARAMS = 100
+# bottle.request.MEMFILE_MAX = 10 * 1024 * 1024
+# bottle.request.MAX_PARAMS = 100
 
 import org.wayround.utils.bottle
 import org.wayround.utils.file
-import org.wayround.utils.http
-from org.wayround.utils.list import (
-    list_strip_remove_empty_remove_duplicated_lines
-    )
-
-import org.wayround.softengine.rtenv
 
 
 class Session:
@@ -41,12 +35,12 @@ class PageAction:
 class Environment:
 
     def __init__(
-        self,
-        rtenv,
-        host='localhost',
-        port=8080,
-        admin_jid='example@ex.nonexisting'
-        ):
+            self,
+            rtenv,
+            host='localhost',
+            port=8080,
+            admin_jid='example@ex.nonexisting'
+            ):
 
         self.ttm = 'org_wayround_gitpub_modules_GitPub'
 
@@ -65,68 +59,65 @@ class Environment:
 
         self.app.route('/', 'GET', self.index)
 
-        self.app.route(
-            '/js/<filename>', 'GET', self.rtenv.modules[self.ttm].js
-            )
-        self.app.route(
-            '/css/<filename>', 'GET', self.rtenv.modules[self.ttm].css
-            )
+        # self.app.route(
+        #    '/css/<filename>', 'GET', self.rtenv.modules[self.ttm].css
+        #    )
 
-        self.app.route('/settings', 'GET', self.site_settings)
-        self.app.route('/settings', 'POST', self.site_settings_post)
-
-        self.app.route('/roles', 'GET', self.site_roles)
-        self.app.route('/roles', 'POST', self.site_roles_post)
-
-        self.app.route('/logout', 'GET', self.logout)
-
-        self.app.route('/new_repository', 'GET', self.new_repository)
-        self.app.route('/new_repository', 'POST', self.new_repository_post)
-
-        self.app.route(
-            '/repository/<repository_name>',
-            'GET',
-            self.repository_view
-            )
-        self.app.route(
-            '/repository/<repository_name>/',
-            'GET',
-            self.redirect_to_repository_view
-            )
-
-        self.app.route(
-            '/repository/<repository_name>/issues',
-            'GET',
-            self.repository_issues
-            )
-
-        self.app.route(
-            '/repository/<repository_name>/activities',
-            'GET',
-            self.repository_activities
-            )
-
-        self.app.route(
-            '/repository/<repository_name>/settings',
-            'GET',
-            self.edit_repository
-            )
-        self.app.route(
-            '/repository/<repository_name>/settings',
-            'POST',
-            self.edit_repository_post
-            )
-
-        self.app.route(
-            '/repository/<repository_name>/roles',
-            'GET',
-            self.repository_roles
-            )
-        self.app.route(
-            '/repository/<repository_name>/roles',
-            'POST',
-            self.repository_roles_post
-            )
+#         self.app.route('/settings', 'GET', self.site_settings)
+#         self.app.route('/settings', 'POST', self.site_settings_post)
+# 
+#         self.app.route('/roles', 'GET', self.site_roles)
+#         self.app.route('/roles', 'POST', self.site_roles_post)
+# 
+#         self.app.route('/logout', 'GET', self.logout)
+# 
+#         self.app.route('/new_repository', 'GET', self.new_repository)
+#         self.app.route('/new_repository', 'POST', self.new_repository_post)
+# 
+#         self.app.route(
+#             '/repository/<repository_name>',
+#             'GET',
+#             self.repository_view
+#             )
+#         self.app.route(
+#             '/repository/<repository_name>/',
+#             'GET',
+#             self.redirect_to_repository_view
+#             )
+# 
+#         self.app.route(
+#             '/repository/<repository_name>/issues',
+#             'GET',
+#             self.repository_issues
+#             )
+# 
+#         self.app.route(
+#             '/repository/<repository_name>/activities',
+#             'GET',
+#             self.repository_activities
+#             )
+# 
+#         self.app.route(
+#             '/repository/<repository_name>/settings',
+#             'GET',
+#             self.edit_repository
+#             )
+#         self.app.route(
+#             '/repository/<repository_name>/settings',
+#             'POST',
+#             self.edit_repository_post
+#             )
+# 
+#         self.app.route(
+#             '/repository/<repository_name>/roles',
+#             'GET',
+#             self.repository_roles
+#             )
+#         self.app.route(
+#             '/repository/<repository_name>/roles',
+#             'POST',
+#             self.repository_roles_post
+#             )
 
         return
 
@@ -140,7 +131,6 @@ class Environment:
             )
 
     def check_key(self, username, key):
-
         """
         return False or user bare jid
         """
@@ -188,12 +178,12 @@ class Environment:
 #        self.app.close()
 
     def get_page_actions(
-        self,
-        mode=None,
-        rts_object=None,
-        repository_name=None,
-        issue_id=None
-        ):
+            self,
+            mode=None,
+            rts_object=None,
+            repository_name=None,
+            issue_id=None
+            ):
 
         if not isinstance(rts_object, Session):
             raise TypeError("rts_object must be a Session object")
@@ -252,14 +242,13 @@ class Environment:
         return ret
 
     def generate_rts_object(self):
-
         """
         rts - run time session
         """
 
         s = None
 
-        if not self.session_cookie_name in bottle.request.cookies:
+        if self.session_cookie_name not in bottle.request.cookies:
             s = self.rtenv.modules[self.ttm].new_session()
             bottle.response.set_cookie(
                 self.session_cookie_name,
@@ -304,10 +293,10 @@ class Environment:
         else:
             site_role = self.rtenv.modules[self.ttm].get_site_role(jid)
 
-            if site_role == None:
+            if site_role is None:
                 ret['site_role'] = 'guest'
             else:
-                if not site_role.role in ['admin', 'user', 'blocked']:
+                if site_role.role not in ['admin', 'user', 'blocked']:
                     ret['site_role'] = 'guest'
                 else:
                     ret['site_role'] = site_role.role
@@ -341,785 +330,237 @@ class Environment:
 
         return ret
 
-    def site_settings_access_check(self, rts):
-
-        if rts.site_role != 'admin':
-            raise bottle.HTTPError(403, "Not Allowed")
-
-        return
-
-    def site_settings(self):
-
-        rts = self.generate_rts_object()
-
-        self.site_settings_access_check(rts)
-
-        actions = self.get_page_actions(
-            mode='settings',
-            rts_object=rts
-            )
-
-        site_title = self.rtenv.modules[self.ttm].get_site_setting(
-            'site_title',
-            'Not titled'
-            )
-
-        site_description = self.rtenv.modules[self.ttm].get_site_setting(
-            'site_description',
-            'None'
-            )
-
-        user_can_register_self = self.rtenv.modules[self.ttm].get_site_setting(
-            'user_can_register_self',
-            False
-            ) == '1'
-
-        user_can_create_repositories = \
-            self.rtenv.modules[self.ttm].get_site_setting(
-                'user_can_create_repositories',
-                False
-                ) == '1'
-
-        settings_page = self.rtenv.modules[self.ttm].site_settings_tpl(
-            site_title,
-            site_description,
-            user_can_register_self,
-            user_can_create_repositories
-            )
-
-        ret = self.rtenv.modules[self.ttm].html_tpl(
-            title="Change site settings",
-            actions=actions,
-            body=settings_page
-            )
-
-        return ret
-
-    def site_settings_post(self):
-
-        rts = self.generate_rts_object()
-
-        self.site_settings_access_check(rts)
-
-        for i in [
-            'site_title',
-            'site_description',
-            ]:
-            if not i in bottle.request.params:
-                raise KeyError("parameter `{}' must be passed".format(i))
-
-        decoded_params = bottle.request.params.decode('utf-8')
-
-        org.wayround.utils.http.convert_cb_params_to_boolean(
-            decoded_params,
-            [
-            'user_can_register_self',
-            'user_can_create_repositories'
-            ]
-            )
-
-        self.rtenv.modules[self.ttm].set_site_setting(
-            'site_title',
-            decoded_params['site_title']
-            )
-
-        self.rtenv.modules[self.ttm].set_site_setting(
-            'site_description',
-            decoded_params['site_description']
-            )
-
-        self.rtenv.modules[self.ttm].set_site_setting(
-            'user_can_register_self',
-            decoded_params['user_can_register_self']
-            )
-
-        self.rtenv.modules[self.ttm].set_site_setting(
-            'user_can_create_repositories',
-            decoded_params['user_can_create_repositories']
-            )
-
-        bottle.response.status = 303
-        bottle.response.set_header('Location', '')
-
-        return
-
-    site_roles_access_check = site_settings_access_check
-
-    def site_roles(self):
-
-        rts = self.generate_rts_object()
-
-        self.site_roles_access_check(rts)
-
-        actions = self.get_page_actions(
-            mode='settings',
-            rts_object=rts
-            )
-
-        roles = self.rtenv.modules[self.ttm].get_site_roles_dict()
-
-        admins = []
-        moders = []
-        users = []
-        blocked = []
-
-        for i in roles.keys():
-
-            if roles[i] == 'admin':
-                admins.append(i)
-
-            if roles[i] == 'moder':
-                moders.append(i)
-
-            if roles[i] == 'user':
-                users.append(i)
-
-            if roles[i] == 'blocked':
-                blocked.append(i)
-
-        admins.sort()
-        moders.sort()
-        users.sort()
-        blocked.sort()
-
-        roles_page = self.rtenv.modules[self.ttm].site_roles_tpl(
-            admins='\n'.join(admins),
-            moders='\n'.join(moders),
-            users='\n'.join(users),
-            blocked='\n'.join(blocked)
-            )
-
-        ret = self.rtenv.modules[self.ttm].html_tpl(
-            title="Change site roles",
-            actions=actions,
-            body=roles_page
-            )
-
-        return ret
-
-    def site_roles_post(self):
-
-        rts = self.generate_rts_object()
-
-        self.site_roles_access_check(rts)
-
-        for i in [
-            'admins',
-            'moders',
-            'users',
-            'blocked'
-            ]:
-            if not i in bottle.request.params:
-                raise KeyError("parameter `{}' must be passed".format(i))
-
-        decoded_params = bottle.request.params.decode('utf-8')
-
-        admins = list_strip_remove_empty_remove_duplicated_lines(
-            decoded_params['admins'].splitlines()
-            )
-
-        moders = list_strip_remove_empty_remove_duplicated_lines(
-            decoded_params['moders'].splitlines()
-            )
-
-        users = list_strip_remove_empty_remove_duplicated_lines(
-            decoded_params['users'].splitlines()
-            )
-
-        blocked = list_strip_remove_empty_remove_duplicated_lines(
-            decoded_params['blocked'].splitlines()
-            )
-
-        roles = {}
-
-        for i in admins:
-            roles[i] = 'admin'
-
-        del admins
-
-        for i in moders:
-            roles[i] = 'moder'
-
-        del moders
-
-        for i in users:
-            roles[i] = 'user'
-
-        del users
-
-        for i in blocked:
-            roles[i] = 'blocked'
-
-        del blocked
-
-        roles = self.rtenv.modules[self.ttm].set_site_roles(roles)
-
-        bottle.response.status = 303
-        bottle.response.set_header('Location', '')
-
-        return
-
-    def new_repository_access_check(self, rts):
-
-        if (rts.site_role != 'admin' and
-            self.rtenv.modules[self.ttm].get_site_setting(
-                'user_can_create_repositories',
-                False
-                ) != '1'
-            ):
-            raise bottle.HTTPError(403, "Not Allowed")
-
-        return
-
-    def new_repository(self):
-
-        rts = self.generate_rts_object()
-
-        self.new_repository_access_check(rts)
-
-        actions = self.get_page_actions(
-            mode='edit_repository',
-            rts_object=rts
-            )
-
-        edit_repository_tpl = self.rtenv.modules[self.ttm].edit_repository_tpl(
-            mode='new'
-            )
-
-        ret = self.rtenv.modules[self.ttm].html_tpl(
-            title="Create new repository",
-            actions=actions,
-            body=edit_repository_tpl
-            )
-
-        return ret
-
-    def new_repository_post(self):
-
-        rts = self.generate_rts_object()
-
-        self.new_repository_access_check(rts)
-
-        for i in ['name', 'title', 'description']:
-            if not i in bottle.request.params:
-                raise KeyError("parameter `{}' must be passed".format(i))
-
-        decoded_params = bottle.request.params.decode('utf-8')
-
-        org.wayround.utils.http.convert_cb_params_to_boolean(
-            decoded_params,
-            [
-            'guests_access_allowed'
-            ]
-            )
-
-        name = decoded_params['name']
-
-        self.rtenv.modules[self.ttm].new_repository(
-            name,
-            decoded_params['title'],
-            decoded_params['description'],
-            decoded_params['guests_access_allowed']
-            )
-
-        ret = self.rtenv.modules[self.ttm].html_tpl(
-            title="Project creation result",
-            actions='',
-            body=''
-            )
-
-        bottle.response.status = 303
-        bottle.response.set_header(
-            'Location', '/repository/{}'.format(urllib.parse.quote(name))
-            )
-
-        return ret
-
-    def edit_repository_access_check(self, rts, repository_record):
-
-        allowed = False
-
-        if rts.site_role == 'admin':
-            allowed = True
-
-        if repository_record.name in rts.repository_roles \
-            and rts.repository_roles[repository_record.name] == 'admin':
-            allowed = True
-
-        if not allowed:
-            raise bottle.HTTPError(403, "Not Allowed")
-
-        return
-
-    def edit_repository(self, repository_name):
-
-        rts = self.generate_rts_object()
-
-        ret = ''
-
-        p = self.rtenv.modules[self.ttm].get_repository(repository_name)
-
-        self.edit_repository_access_check(rts, p)
-
-        if not p:
-            raise bottle.HTTPError(404, body="Project not found")
-
-        else:
-
-            actions = self.get_page_actions(
-                mode='edit_repository',
-                rts_object=rts,
-                repository_name=repository_name
-                )
-
-            edit_repository_tpl = self.rtenv.modules[self.ttm].edit_repository_tpl(
-                mode='edit',
-                name=repository_name,
-                title=p.title,
-                description=p.description,
-                guests_access_allowed=p.guests_access_allowed
-                )
-
-            ret = self.rtenv.modules[self.ttm].html_tpl(
-                title="Edit repository",
-                actions=actions,
-                body=edit_repository_tpl
-                )
-
-        return ret
-
-    def edit_repository_post(self, repository_name):
-
-        rts = self.generate_rts_object()
-
-        for i in ['title', 'description']:
-            if not i in bottle.request.params:
-                raise KeyError("parameter `{}' must be passed".format(i))
-
-        decoded_params = bottle.request.params.decode('utf-8')
-
-        org.wayround.utils.http.convert_cb_params_to_boolean(
-            decoded_params,
-            [
-            'guests_access_allowed'
-            ]
-            )
-
-        p = self.rtenv.modules[self.ttm].get_repository(repository_name)
-
-        self.edit_repository_access_check(rts, p)
-
-        if not p:
-            raise bottle.HTTPError(404, body="Project not found")
-
-        p = self.rtenv.modules[self.ttm].edit_repository(
-            repository_name,
-            decoded_params['title'],
-            decoded_params['description'],
-            decoded_params['guests_access_allowed']
-            )
-
-        if not p:
-            raise bottle.HTTPError(404, body="Project not found")
-
-        bottle.response.status = 303
-        bottle.response.set_header(
-            'Location', '/repository/{}'.format(
-                urllib.parse.quote(repository_name)
-                )
-            )
-
-        return
-
-    repository_roles_access_check = edit_repository_access_check
-
-    def repository_roles(self, repository_name):
-
-        rts = self.generate_rts_object()
-
-        p = self.rtenv.modules[self.ttm].get_repository(repository_name)
-
-        self.repository_roles_access_check(rts, p)
-
-        del p
-
-        actions = self.get_page_actions(
-            mode='repository_roles',
-            rts_object=rts,
-            repository_name=repository_name
-            )
-
-        roles = self.rtenv.modules[self.ttm].get_site_roles_dict()
-
-        site_admins = []
-        site_moders = []
-        site_users = []
-        site_blocked = []
-
-        for i in roles.keys():
-
-            if roles[i] == 'admin':
-                site_admins.append(i)
-
-            if roles[i] == 'moder':
-                site_moders.append(i)
-
-            if roles[i] == 'user':
-                site_users.append(i)
-
-            if roles[i] == 'blocked':
-                site_blocked.append(i)
-
-        site_admins.sort()
-        site_moders.sort()
-        site_users.sort()
-        site_blocked.sort()
-
-        roles = self.rtenv.modules[self.ttm].get_repository_roles_dict(
-            repository_name
-            )
-
-        admins = []
-        moders = []
-        users = []
-        blocked = []
-
-        for i in roles.keys():
-
-            if roles[i] == 'admin':
-                admins.append(i)
-
-            if roles[i] == 'moder':
-                moders.append(i)
-
-            if roles[i] == 'user':
-                users.append(i)
-
-            if roles[i] == 'blocked':
-                blocked.append(i)
-
-        admins.sort()
-        moders.sort()
-        users.sort()
-        blocked.sort()
-
-        roles_page = self.rtenv.modules[self.ttm].repository_roles_tpl(
-            admins='\n'.join(admins),
-            moders='\n'.join(moders),
-            users='\n'.join(users),
-            blocked='\n'.join(blocked),
-            site_admins='\n'.join(site_admins),
-            site_moders='\n'.join(site_moders),
-            site_users='\n'.join(site_users),
-            site_blocked='\n'.join(site_blocked),
-            god=self.admin_jid
-            )
-
-        ret = self.rtenv.modules[self.ttm].html_tpl(
-            title="Change repository roles",
-            actions=actions,
-            body=roles_page
-            )
-
-        return ret
-
-    def repository_roles_post(self, repository_name):
-
-        rts = self.generate_rts_object()
-
-        self.repository_roles_access_check(rts)
-
-        for i in [
-            'admins',
-            'moders',
-            'users',
-            'blocked'
-            ]:
-            if not i in bottle.request.params:
-                raise KeyError("parameter `{}' must be passed".format(i))
-
-        decoded_params = bottle.request.params.decode('utf-8')
-
-        admins = list_strip_remove_empty_remove_duplicated_lines(
-            decoded_params['admins'].splitlines()
-            )
-
-        moders = list_strip_remove_empty_remove_duplicated_lines(
-            decoded_params['moders'].splitlines()
-            )
-
-        users = list_strip_remove_empty_remove_duplicated_lines(
-            decoded_params['users'].splitlines()
-            )
-
-        blocked = list_strip_remove_empty_remove_duplicated_lines(
-            decoded_params['blocked'].splitlines()
-            )
-
-        roles = {}
-
-        for i in admins:
-            roles[i] = 'admin'
-
-        del admins
-
-        for i in moders:
-            roles[i] = 'moder'
-
-        del moders
-
-        for i in users:
-            roles[i] = 'user'
-
-        del users
-
-        for i in blocked:
-            roles[i] = 'blocked'
-
-        del blocked
-
-        roles = self.rtenv.modules[self.ttm].set_site_roles(roles)
-
-        bottle.response.status = 303
-        bottle.response.set_header('Location', '')
-
-        return
-
-    def login_access_check(self, jid):
-
-        ret = True
-
-        role = self.rtenv.modules[self.ttm].get_site_role(jid)
-
-        if not role or role.role == 'blocked':
-            ret = False
-
-        return ret
-
-    def register_access_check(self, jid):
-
-        ret = True
-
-        role = self.rtenv.modules[self.ttm].get_site_role(jid)
-
-        if role or not self.rtenv.modules[self.ttm].get_site_setting(
-            'user_can_register_self',
-            False
+    def get_role(
+            self, subject_jid, home_level=None, repo_level=None
             ):
 
-            ret = False
+        ret = None
+
+        if self.admin_jid == subject_jid:
+            ret = 'admin'
+
+        if ret is None:
+
+            subject_jid_site_role = \
+                self.rtenv.modules[self.ttm].get_site_role(subject_jid)
+
+            if subject_jid_site_role == 'admin':
+                ret = 'admin'
+
+            else:
+
+                if home_level == repo_level is None:
+
+                    ret = subject_jid_site_role
+
+                elif home_level is not None and repo_level is None:
+
+                    ret = self.rtenv.modules[self.ttm].get_home_role(
+                        home_level,
+                        subject_jid
+                        )
+
+                elif home_level is not None and repo_level is not None:
+
+                    subject_jid_home_role = \
+                        self.rtenv.modules[self.ttm].get_home_role(
+                            home_level, subject_jid
+                            )
+
+                    if subject_jid_home_role == 'admin':
+
+                        ret = 'admin'
+
+                    else:
+
+                        ret = self.rtenv.modules[self.ttm].get_repository_role(
+                            subject_jid, repo_level
+                            )
+
+                else:
+                    ret = 'guest'
 
         return ret
 
-    def logout(self):
-        bottle.response.delete_cookie(self.session_cookie_name)
-        bottle.response.status = 303
-        bottle.response.set_header('Location', '/')
-#        bottle.response.set_header('Cache-Control', 'no-cache')
-#        bottle.redirect('/', code=200)
+    def get_access_mode(
+            self, subject_jid, home_level=None, repo_level=None
+            ):
 
-    def redirect_to_repository_view(self, repository_name):
-        bottle.response.status = 303
-        bottle.response.set_header(
-            'Location', '/repository/{}'.format(urllib.parse.quote(repository_name))
-            )
+        # TODO: is this method used?
 
-    def repository_view_access_check(self, rts, repository_record):
+        ret = 'none'
 
-        allowed = False
+        subject_jid_site_role = self.get_role(subject_jid)
 
-        if rts.site_role == 'admin':
-            allowed = True
-
-        if repository_record.name in rts.repository_roles:
-
-            if rts.repository_roles[repository_record.repository_name] != 'blocked':
-                allowed = True
+        if subject_jid_site_role == 'admin':
+            ret = 'full'
 
         else:
 
-            if repository_record.guests_access_allowed:
-                allowed = True
+            if home_level == repo_level is None:
+                if subject_jid_site_role == 'guest':
 
-        if not allowed:
-            raise bottle.HTTPError(403, "Not Allowed")
+                    if self.rtenv.modules[self.ttm].get_site_setting(
+                            'guest_can_read_index',
+                            False
+                            ):
 
-        return
+                        ret = 'read'
 
-    def repository_view(self, repository_name):
+                if subject_jid_site_role == 'user':
 
-        ret = ''
+                    ret = 'read'
 
-        rts = self.generate_rts_object()
+            elif home_level is not None and repo_level is None:
 
-        p = self.rtenv.modules[self.ttm].get_repository(repository_name)
+                if home_level == subject_jid:
+                    ret = 'full'
+                else:
+                    if self.get_access_mode(
+                            subject_jid
+                            ) != 'none':
 
-        if not p:
-            raise bottle.HTTPError(404, body="Project not found")
+                        hs = self.rtenv.modules[self.ttm].get_home_setting(
+                            home_level
+                            )
 
-        else:
+                        if hs is not None and hs.guests_can_view:
+                            ret = 'read'
+                        else:
+                            ret = 'none'
 
-            self.repository_view_access_check(rts, p)
+            elif home_level is not None and repo_level is not None:
+                if home_level == subject_jid:
+                    ret = 'full'
+                else:
+                    if self.get_access_mode(
+                            subject_jid,
+                            home_level
+                            ) != 'none':
 
-            actions = self.get_page_actions(
-                mode='repository',
-                repository_name=repository_name,
-                rts_object=rts
-                )
+                        hs = self.rtenv.modules[self.ttm].\
+                            get_repository_setting(
+                                home_level
+                                )
 
-            opened = self.rtenv.modules[self.ttm].get_repository_issues(
-                repository_name, 'open', 0, 100
-                )
+                        if hs is not None and hs.guests_can_view:
+                            ret = 'read'
+                        else:
+                            ret = 'none'
 
-            closed = self.rtenv.modules[self.ttm].get_repository_issues(
-                repository_name, 'closed', 0, 100
-                )
-
-            deleted = self.rtenv.modules[self.ttm].get_repository_issues(
-                repository_name, 'deleted', 0, 100
-                )
-
-            open_table = self.rtenv.modules[self.ttm].\
-                issue_teaser_table_tpl(opened)
-
-            closed_table = self.rtenv.modules[self.ttm].issue_teaser_table_tpl(
-                closed
-                )
-
-            deleted_table = self.rtenv.modules[self.ttm].\
-                issue_teaser_table_tpl(
-                    deleted
-                    )
-
-            repository_page = self.rtenv.modules[self.ttm].repository_page_tpl(
-                repository_name=repository_name,
-                open_issue_table=open_table,
-                closed_issue_table=closed_table,
-                deleted_issue_table=deleted_table
-                )
-
-            ret = self.rtenv.modules[self.ttm].html_tpl(
-                title="`{}' issues".format(p.title),
-                actions=actions,
-                body=repository_page
-                )
+            else:
+                ret = 'none'
 
         return ret
 
-    def repository_issues(self, repository_name):
-        ret = ''
+    def check_permission(
+            self,
+            subject_jid,
+            what,
+            home_level=None,
+            repo_level=None
+            ):
 
-        rts = self.generate_rts_object()
+        ret = False
 
-        p = self.rtenv.modules[self.ttm].get_repository(repository_name)
+        subject_jid_site_role = self.get_role(subject_jid)
 
-        self.repository_view_access_check(rts, p)
-
-        decoded_params = bottle.request.params.decode('utf-8')
-
-        if not 'page' in decoded_params:
-            decoded_params['page'] = '0'
-
-        if not 'count' in decoded_params:
-            decoded_params['count'] = '100'
-
-        if not 'status' in decoded_params:
-            decoded_params['status'] = 'open'
-
-        if (not decoded_params['status']
-            in self.rtenv.modules[self.ttm].statuses):
-            raise bottle.HTTPError(400, body="invalid status")
-
-        try:
-            page = int(decoded_params['page'])
-            count = int(decoded_params['count'])
-        except:
-            raise bottle.HTTPError(400, body="invalid numbers")
-
-        if not p:
-            raise bottle.HTTPError(404, body="Project not found")
+        if subject_jid_site_role == 'admin' or self.admin_jid == subject_jid:
+            ret = True
 
         else:
 
-            actions = self.get_page_actions(
-                mode='repository_activities',
-                repository_name=repository_name,
-                rts_object=rts
-                )
+            if what == 'can_read':
 
-            issue_records = self.rtenv.modules[self.ttm].get_repository_issues(
-                repository_name,
-                decoded_params['status'],
-                page * count,
-                (page * count) + count
-                )
+                if home_level is None and repo_level is None:
 
-            issue_page = self.rtenv.modules[self.ttm].repository_issues_page_tpl(
-                issue_records=issue_records,
-                status=decoded_params['status'],
-                page=page,
-                count=count
-                )
+                    if subject_jid_site_role == 'guest':
 
-            ret = self.rtenv.modules[self.ttm].html_tpl(
-                title="`{}' {} issues".format(
-                    p.title,
-                    decoded_params['status']
-                    ),
-                actions=actions,
-                body=issue_page
-                )
+                        if self.rtenv.modules[self.ttm].get_site_setting(
+                                'guest_can_list_homes',
+                                False
+                                ):
+                            ret = True
+                    else:
 
-        return ret
+                        ret = True
 
-    def repository_activities(self, repository_name):
-        ret = ''
+                elif home_level is not None and repo_level is None:
 
-        rts = self.generate_rts_object()
+                    subject_jid_home_role = \
+                        self.get_role(subject_jid, home_level)
 
-        p = self.rtenv.modules[self.ttm].get_repository(repository_name)
+                    if subject_jid_home_role == 'admin':
+                        ret = True
+                    else:
 
-        self.repository_view_access_check(rts, p)
+                        if subject_jid_home_role == 'guest':
 
-        decoded_params = bottle.request.params.decode('utf-8')
+                            home_setting = \
+                                self.rtenv.modules[self.ttm].get_home_setting(
+                                    subject_jid
+                                    )
 
-        if not 'page' in decoded_params:
-            decoded_params['page'] = '0'
+                            if (home_setting is not None
+                                    and home_setting.guests_can_view):
+                                ret = True
 
-        if not 'count' in decoded_params:
-            decoded_params['count'] = '100'
+                        else:
+                            ret = True
 
-        try:
-            page = int(decoded_params['page'])
-            count = int(decoded_params['count'])
-        except:
-            raise bottle.HTTPError(400, body="invalid numbers")
+                elif home_level is not None and repo_level is not None:
 
-        if not p:
-            raise bottle.HTTPError(404, body="Project not found")
+                    subject_jid_repository_role = \
+                        self.get_role(subject_jid, home_level, repo_level)
 
-        else:
+                    if subject_jid_repository_role == 'admin':
+                        ret = True
+                    else:
 
-            actions = self.get_page_actions(
-                mode='repository_activities',
-                repository_name=repository_name,
-                rts_object=rts
-                )
+                        if subject_jid_repository_role == 'guest':
 
-            repository_updates = self.rtenv.modules[self.ttm].get_repository_updates(
-                repository_name, page * count, ((page * count) + count)
-                )
+                            repository_setting = self.rtenv.modules[self.ttm].\
+                                get_repository_setting(
+                                    subject_jid
+                                    )
 
-            activities_table = self.rtenv.modules[self.ttm].\
-                repository_activity_table_tpl(
-                    activities=repository_updates, page=page, count=count
-                    )
+                            if (repository_setting is not None
+                                    and repository_setting.guests_can_view):
+                                ret = True
 
-            ret = self.rtenv.modules[self.ttm].html_tpl(
-                title="`{}' activities".format(p.title),
-                actions=actions,
-                body=activities_table
-                )
+                        else:
+                            ret = True
+
+                else:
+                    raise Exception("invalid param combination")
+
+            elif what == 'can_write':
+
+                # manage: create, destroy
+
+                if home_level is None and repo_level is None:
+
+                    if self.get_role(subject_jid) == 'admin':
+                        ret = True
+
+                elif home_level is not None and repo_level is None:
+
+                    if self.get_role(subject_jid, home_level) == 'admin':
+                        ret = True
+
+                elif home_level is not None and repo_level is not None:
+
+                    subject_jid_repository_role = \
+                        self.get_role(subject_jid, home_level, repo_level)
+
+                    if subject_jid_repository_role in ['admin', 'user']:
+                        ret = True
+
+                else:
+                    raise Exception("invalid param combination")
+
+            else:
+                raise Exception("invalid `what' value")
 
         return ret
 

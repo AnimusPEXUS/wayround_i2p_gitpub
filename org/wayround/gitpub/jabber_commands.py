@@ -5,10 +5,10 @@ import org.wayround.xmpp.core
 class JabberCommands:
 
     def __init__(self):
-        self._site = None
+        self._environ = None
 
-    def set_site(self, site):
-        self._site = site
+    def set_environ(self, environ):
+        self._environ = environ
 
     def set_ssh_git_host(self, ssh_git_host):
         self._ssh_git_host = ssh_git_host
@@ -19,6 +19,7 @@ class JabberCommands:
                 register=self.register,
                 login=self.login,
                 set_key=self.set_key,
+                home_list=self.home_list,
                 help=self.help
                 ),
             me=dict(
@@ -28,15 +29,15 @@ class JabberCommands:
 
     def status(self, comm, opts, args, adds):
 
-        if not self._site:
-            raise ValueError("use set_site() method")
+        if not self._environ:
+            raise ValueError("use set_environ() method")
 
         ret = 0
         asker_jid = adds['asker_jid']
         messages = adds['messages']
         ret_stanza = adds['ret_stanza']
 
-        roles = self._site.get_site_roles_for_jid(asker_jid)
+        roles = self._environ.get_site_roles_for_jid(asker_jid)
 
         error = False
 
@@ -88,7 +89,7 @@ class JabberCommands:
             roles_to_print = roles
 
             if roles['site_role'] == 'admin':
-                roles_to_print = self._site.get_site_roles_for_jid(
+                roles_to_print = self._environ.get_site_roles_for_jid(
                     jid_to_know,
                     all_site_projects=True
                     )
@@ -98,9 +99,9 @@ class JabberCommands:
 
     {jid} project roles:
     """.format(
-    site_role=roles_to_print['site_role'],
-    jid=jid_to_know
-    )
+                site_role=roles_to_print['site_role'],
+                jid=jid_to_know
+                )
 
             projects = list(roles_to_print['project_roles'].keys())
             projects.sort()
@@ -123,26 +124,25 @@ class JabberCommands:
         return ret
 
     def register(self, comm, opts, args, adds):
-
         """
         Register self or new user
 
         [-r=role] [barejid]
 
-        -r=role - role. one of 'admin', 'moder', 'user', 'guest'. only admin can
-                  use this parameter
+        -r=role - role. one of 'admin', 'moder', 'user', 'guest'. only admin
+                  can use this parameter
 
         barejid - user jid to register. leave empty to register self.
         """
 
-        if not self._site:
-            raise ValueError("use set_site() method")
+        if not self._environ:
+            raise ValueError("use set_environ() method")
 
         ret = 0
         asker_jid = adds['asker_jid']
         messages = adds['messages']
 
-        roles = self._site.get_site_roles_for_jid(asker_jid)
+        roles = self._environ.get_site_roles_for_jid(asker_jid)
 
         error = False
 
@@ -185,12 +185,12 @@ class JabberCommands:
         else:
 
             registrant_role = \
-                self._site.rtenv.modules[self._site.ttm].get_site_role(
+                self._environ.rtenv.modules[self._environ.ttm].get_site_role(
                     jid_to_reg
                     )
 
             if (asker_jid == jid_to_reg
-                and roles['site_role'] != 'guest'):
+                    and roles['site_role'] != 'guest'):
 
                 messages.append(
                     {'type': 'error',
@@ -204,15 +204,16 @@ class JabberCommands:
                         )
                     self._ssh_git_host.user_create(jid_to_reg)
 
-            elif registrant_role != None:
+            elif registrant_role is not None:
 
                 messages.append(
-                    {'type': 'error',
-                     'text': '{} already have role: {}'.format(
-                        jid_to_reg,
-                        registrant_role.role
-                        )
-                     }
+                    {
+                        'type': 'error',
+                        'text': '{} already have role: {}'.format(
+                            jid_to_reg,
+                            registrant_role.role
+                            )
+                        }
                     )
 
                 if not self._ssh_git_host.user_is_exists(jid_to_reg):
@@ -227,13 +228,14 @@ class JabberCommands:
                 if ((roles['site_role'] == 'admin')
                     or
                     (roles['site_role'] != 'admin'
-                     and self._site.register_access_check(asker_jid))):
+                     and self._environ.register_access_check(asker_jid))):
 
                     try:
-                        self._site.rtenv.modules[self._site.ttm].add_site_role(
-                            jid_to_reg,
-                            role
-                            )
+                        self._environ.rtenv.modules[self._environ.ttm].\
+                            add_site_role(
+                                jid_to_reg,
+                                role
+                                )
                     except:
                         messages.append(
                             {'type': 'error',
@@ -257,14 +259,14 @@ class JabberCommands:
 
     def login(self, comm, opts, args, adds):
 
-        if not self._site:
-            raise ValueError("use set_site() method")
+        if not self._environ:
+            raise ValueError("use set_environ() method")
 
         ret = 0
         asker_jid = adds['asker_jid']
         messages = adds['messages']
 
-        roles = self._site.get_site_roles_for_jid(asker_jid)
+        roles = self._environ.get_site_roles_for_jid(asker_jid)
 
         cookie = None
 
@@ -290,12 +292,10 @@ class JabberCommands:
                     )
             else:
 
-                session = (
-                    self._site.rtenv.modules[self._site.ttm].\
-                        get_session_by_cookie(
-                            cookie
-                            )
-                    )
+                session = self._environ.rtenv.modules[self._environ.ttm].\
+                    get_session_by_cookie(
+                        cookie
+                        )
 
                 if not session:
                     messages.append(
@@ -304,11 +304,14 @@ class JabberCommands:
                         )
                 else:
 
-                    if ((roles['site_role'] == 'admin') or
-                        (roles['site_role'] != 'admin' and
-                         self._site.login_access_check(asker_jid))):
+                    if ((roles['site_role'] == 'admin')
+                        or (roles['site_role'] != 'admin'
+                                    and
+                                    self._environ.login_access_check(asker_jid)
+                                    )
+                        ):
 
-                        self._site.rtenv.modules[self._site.ttm].\
+                        self._environ.rtenv.modules[self._environ.ttm].\
                             assign_jid_to_session(
                                 session,
                                 asker_jid
@@ -322,7 +325,7 @@ class JabberCommands:
                     else:
 
                         messages.append(
-                            {'type': 'errlr',
+                            {'type': 'error',
                              'text': "Loggin forbidden"}
                             )
 
@@ -330,15 +333,15 @@ class JabberCommands:
 
     def set_key(self, comm, opts, args, adds):
 
-        if not self._site:
-            raise ValueError("use set_site() method")
+        if not self._environ:
+            raise ValueError("use set_environ() method")
 
         ret = 0
         asker_jid = adds['asker_jid']
         stanza = adds['stanza']
         messages = adds['messages']
 
-        roles = self._site.get_site_roles_for_jid(asker_jid)
+        roles = self._environ.get_site_roles_for_jid(asker_jid)
 
         error = False
 
@@ -351,16 +354,15 @@ class JabberCommands:
         if '-j' in opts:
             if roles['site_role'] != 'admin':
                 messages.append(
-                    {
-                     'type': 'error',
-                     'text': "Only admin allowed to use parameter -j"
-                     }
+                    {'type': 'error',
+                     'text': "Only admin allowed to use parameter -j"}
                     )
+                error = True
             else:
                 who = opts['-j']
 
         if not error:
-            self._site.rtenv.modules[self._site.ttm].user_set_public_key(
+            self._environ.rtenv.modules[self._environ.ttm].user_set_public_key(
                 who, msg
                 )
 
@@ -369,10 +371,100 @@ class JabberCommands:
 
         return ret
 
+    def home_list(self, comm, opts, args, adds):
+
+        ret = 0
+        asker_jid = adds['asker_jid']
+        stanza = adds['stanza']
+        messages = adds['messages']
+
+        error = False
+
+        if not self._environ.check_permission(
+                asker_jid,
+                'can_read',
+                '/'
+                ):
+            messages.append(
+                {
+                    'type': 'error',
+                    'text': "Not allowed"
+                    }
+                )
+            ret = 2
+
+        else:
+            res = self._ssh_git_host.home_list()
+            messages.append(
+                {
+                    'type': 'text',
+                    'text': repr(res)
+                    }
+                )
+
+        if error:
+            ret = 1
+
+        return ret
+
+    def home_create(self, comm, opts, args, adds):
+
+        ret = 0
+        asker_jid = adds['asker_jid']
+        stanza = adds['stanza']
+        messages = adds['messages']
+
+        error = False
+
+        for_ = asker_jid
+
+        asker_roles = self._environ.get_site_roles_for_jid(asker_jid)
+
+        if '-j' in opts:
+            for_ = opts['-j']
+
+        if for_ != asker_jid and 'admin' not in asker_roles:
+            messages.append(
+                {
+                    'type': 'error',
+                    'text': "Not allowed"
+                    }
+                )
+            ret = 3
+
+        if ret == 0:
+
+            if not self._environ.check_permission(
+                    asker_jid,
+                    'can_write',
+                    '/'
+                    ):
+                messages.append(
+                    {
+                        'type': 'error',
+                        'text': "Not allowed"
+                        }
+                    )
+                ret = 2
+
+            else:
+                res = self._ssh_git_host.home_create()
+                messages.append(
+                    {
+                        'type': 'text',
+                        'text': repr(res)
+                        }
+                    )
+
+        if error:
+            ret = 1
+
+        return ret
+
     def help(self, comm, opts, args, adds):
 
-        if not self._site:
-            raise ValueError("use set_site() method")
+        if not self._environ:
+            raise ValueError("use set_environ() method")
 
         ret = 0
         ret_stanza = adds['ret_stanza']
