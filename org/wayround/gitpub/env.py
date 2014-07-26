@@ -65,15 +65,15 @@ class Environment:
 
 #         self.app.route('/settings', 'GET', self.site_settings)
 #         self.app.route('/settings', 'POST', self.site_settings_post)
-# 
+#
 #         self.app.route('/roles', 'GET', self.site_roles)
 #         self.app.route('/roles', 'POST', self.site_roles_post)
-# 
+#
 #         self.app.route('/logout', 'GET', self.logout)
-# 
+#
 #         self.app.route('/new_repository', 'GET', self.new_repository)
 #         self.app.route('/new_repository', 'POST', self.new_repository_post)
-# 
+#
 #         self.app.route(
 #             '/repository/<repository_name>',
 #             'GET',
@@ -84,19 +84,19 @@ class Environment:
 #             'GET',
 #             self.redirect_to_repository_view
 #             )
-# 
+#
 #         self.app.route(
 #             '/repository/<repository_name>/issues',
 #             'GET',
 #             self.repository_issues
 #             )
-# 
+#
 #         self.app.route(
 #             '/repository/<repository_name>/activities',
 #             'GET',
 #             self.repository_activities
 #             )
-# 
+#
 #         self.app.route(
 #             '/repository/<repository_name>/settings',
 #             'GET',
@@ -107,7 +107,7 @@ class Environment:
 #             'POST',
 #             self.edit_repository_post
 #             )
-# 
+#
 #         self.app.route(
 #             '/repository/<repository_name>/roles',
 #             'GET',
