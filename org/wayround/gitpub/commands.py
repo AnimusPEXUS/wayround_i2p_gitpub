@@ -2,9 +2,9 @@
 import logging
 import threading
 
-import org.wayround.gitpub.env
 import org.wayround.gitpub.jabber_commands
 import org.wayround.gitpub.modules
+import org.wayround.gitpub.controller
 import org.wayround.softengine.rtenv
 import org.wayround.sshgithost.sshgithost
 import org.wayround.xmpp.client_bot
@@ -66,24 +66,31 @@ def site_start(comm, opts, args, adds):
 
     bot = org.wayround.xmpp.client_bot.Bot()
 
-    environ = org.wayround.gitpub.env.Environment(
-        rtenv,
-        host=host,
-        port=port,
+    #environ = org.wayround.gitpub.env.Environment(
+    #    rtenv,
+    #    host=host,
+    #    port=port,
+    #    admin_jid=main_admin
+    #    )
+        
+    controller = org.wayround.gitpub.controller.Controller(
         admin_jid=main_admin
         )
+    controller.set_bot(bot)
+    controller.set_ssh_git_host(ssh_git_host)
+    controller.set_rtenv(rtenv)
 
-    threading.Thread(
-        name="Environ Thread",
-        target=environ.start
-        ).start()
+    #threading.Thread(
+        #name="Environ Thread",
+        #target=environ.start
+        #).start()
 
-    commands.set_environ(environ)
+    commands.set_controller(controller)
     commands.set_ssh_git_host(ssh_git_host)
 
     bot.set_commands(commands.commands_dict())
-    environ.set_bot(bot)
-    environ.set_ssh_git_host(ssh_git_host)
+    #environ.set_bot(bot)
+    #environ.set_ssh_git_host(ssh_git_host)
 
     threading.Thread(
         name="Bot Thread",
@@ -108,8 +115,8 @@ def site_start(comm, opts, args, adds):
     ssh_git_host.stop()
     logging.debug("starting bot stop")
     bot.disconnect()
-    logging.debug("starting environ stop")
-    environ.stop()
+    #logging.debug("starting environ stop")
+    #environ.stop()
     logging.debug("all things stopped")
 
     logging.debug("MainThread exiting")

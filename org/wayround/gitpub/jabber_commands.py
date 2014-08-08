@@ -1,43 +1,57 @@
 
+import collections
+
 import org.wayround.xmpp.core
+import org.wayround.gitpub.modules
 
 
 class JabberCommands:
 
     def __init__(self):
-        self._environ = None
+        self._controller = None
+        self._ssh_git_host = None
+        return
 
-    def set_environ(self, environ):
-        self._environ = environ
+    def set_controller(self, controller):
+        self._controller = controller
+        return
 
     def set_ssh_git_host(self, ssh_git_host):
         self._ssh_git_host = ssh_git_host
+        return
 
     def commands_dict(self):
-        return dict(
-            site=dict(
-                register=self.register,
-                login=self.login,
-                set_key=self.set_key,
-                home_list=self.home_list,
-                help=self.help
-                ),
-            me=dict(
-                status=self.status
-                )
-            )
+        return collections.OrderedDict(
+            [
+                ('set', self.set_set),
+                ('register', self.register),
+                ('stat', self.stat),
+                ('set-key', self.set_key),
+                ('set-role', self.set_role),
+                ('ls', self.ls)
+                ]
+        )
 
-    def status(self, comm, opts, args, adds):
+    def stat(self, comm, opts, args, adds):
+        """
+        Get status for You or some JID one site, home or repository
+        (using path)
 
-        if not self._environ:
-            raise ValueError("use set_environ() method")
+        [-j=user] [path]
+
+        If `path' is not specified, then status on site is returned, else
+        the status and access permission on path is returned.
+
+        Only admin can use -j parameter
+        """
+
+        if not self._controller:
+            raise ValueError("use set_controller() method")
 
         ret = 0
         asker_jid = adds['asker_jid']
         messages = adds['messages']
         ret_stanza = adds['ret_stanza']
-
-        roles = self._environ.get_site_roles_for_jid(asker_jid)
 
         error = False
 
@@ -45,361 +59,160 @@ class JabberCommands:
 
         len_args = len(args)
 
+        if '-j' in opts:
+            jid_to_know = opts['-j']
+
+        path = '/'
         if len_args == 0:
             pass
-
         elif len_args == 1:
-
-            if roles['site_role'] == 'admin':
-
-                jid_to_know = args[0]
-
-                try:
-                    org.wayround.xmpp.core.JID.new_from_str(jid_to_know)
-                except:
-
-                    messages.append(
-                        {'type': 'error',
-                         'text': "Invalid JID supplied"
-                         }
-                        )
-
-                    error = True
-
-            else:
-
-                messages.append(
-                    {'type': 'error',
-                     'text': "You are not admin"}
-                    )
-
-                error = True
-
+            path = args[0]
         else:
-
             messages.append(
                 {'type': 'error',
-                 'text': "Too many arguments"}
+                 'text': "Invalid arguments count"}
                 )
+            error = True
 
+        try:
+            jid_to_know = org.wayround.xmpp.core.jid_to_bare(jid_to_know)
+        except:
+            messages.append(
+                {'type': 'error',
+                 'text': "Can't parse interesting JID"}
+                )
             error = True
 
         if not error:
-
-            roles_to_print = roles
-
-            if roles['site_role'] == 'admin':
-                roles_to_print = self._environ.get_site_roles_for_jid(
-                    jid_to_know,
-                    all_site_projects=True
-                    )
-
-            text = """
-    {jid} site role: {site_role}
-
-    {jid} project roles:
-    """.format(
-                site_role=roles_to_print['site_role'],
-                jid=jid_to_know
+            res = self._controller.status(
+                asker_jid,
+                jid_to_know,
+                path,
+                messages
                 )
 
-            projects = list(roles_to_print['project_roles'].keys())
-            projects.sort()
+            messages.append(
+                {'type': 'text',
+                 'text': """
+role:        {}
+permissions: {}
+""".format(res[0], ', '.join(res[1]))
+                    }
+                )
 
-            for i in projects:
+            ret = 0
 
-                text += '    {}: {}\n'.format(
-                    i,
-                    roles_to_print['project_roles'][i]
-                    )
-
-            text += '\n'
-
-            ret_stanza.body = [
-                org.wayround.xmpp.core.MessageBody(
-                    text=text
-                    )
-                ]
+        else:
+            ret = int(error)
 
         return ret
 
     def register(self, comm, opts, args, adds):
         """
-        Register self or new user
+        Register self or new user (self by default)
 
         [-r=role] [barejid]
 
-        -r=role - role. one of 'admin', 'moder', 'user', 'guest'. only admin
-                  can use this parameter
+        Both option and argument can by used by admin only. Guests can register
+        self only if this is permitted by configuration.
 
-        barejid - user jid to register. leave empty to register self.
+        -r=role - role. one of 'admin', 'user', 'guest'
+
+        barejid - user jid to register. leave empty to register self
         """
 
-        if not self._environ:
-            raise ValueError("use set_environ() method")
+        if not self._controller:
+            raise ValueError("use set_controller() method")
 
         ret = 0
         asker_jid = adds['asker_jid']
         messages = adds['messages']
 
-        roles = self._environ.get_site_roles_for_jid(asker_jid)
+        len_args = len(args)
 
         error = False
 
         role = 'user'
-        jid_to_reg = asker_jid
+        if '-r' in opts:
+            role = opts['-r']
 
-        if roles['site_role'] == 'admin':
-            if '-r' in opts:
-                role = opts['-r']
-
-            if len(args) == 1:
-                jid_to_reg = args[0]
-
-                try:
-                    org.wayround.xmpp.core.JID.new_from_str(jid_to_reg)
-                except:
-                    messages.append(
-                        {'type': 'error',
-                         'text': "Can't parse supplied JID"}
-                        )
-                    error = True
-
+        target_jid = None
+        if len_args == 0:
+            target_jid = asker_jid
+        elif len_args == 1:
+            target_jid = args[0]
         else:
-            if '-r' in opts:
-                messages.append(
-                    {'type': 'error',
-                     'text': "You are not admin and can't use -r option"}
-                    )
-                error = True
-
-            if len(args) != 0:
-                messages.append(
-                    {'type': 'error',
-                     'text': "You are not admin and can't use arguments"}
-                    )
-                error = True
-
-        if error:
-            pass
-        else:
-
-            registrant_role = \
-                self._environ.rtenv.modules[self._environ.ttm].get_site_role(
-                    jid_to_reg
-                    )
-
-            if (asker_jid == jid_to_reg
-                    and roles['site_role'] != 'guest'):
-
-                messages.append(
-                    {'type': 'error',
-                     'text': 'You already registered'}
-                    )
-
-                if not self._ssh_git_host.user_is_exists(jid_to_reg):
-                    messages.append(
-                        {'type': 'info',
-                         'text': 'user not found in ssh git host. creating'}
-                        )
-                    self._ssh_git_host.user_create(jid_to_reg)
-
-            elif registrant_role is not None:
-
-                messages.append(
-                    {
-                        'type': 'error',
-                        'text': '{} already have role: {}'.format(
-                            jid_to_reg,
-                            registrant_role.role
-                            )
-                        }
-                    )
-
-                if not self._ssh_git_host.user_is_exists(jid_to_reg):
-                    messages.append(
-                        {'type': 'info',
-                         'text': 'user not found in ssh git host. creating'}
-                        )
-                    self._ssh_git_host.user_create(jid_to_reg)
-
-            else:
-
-                if ((roles['site_role'] == 'admin')
-                    or
-                    (roles['site_role'] != 'admin'
-                     and self._environ.register_access_check(asker_jid))):
-
-                    try:
-                        self._environ.rtenv.modules[self._environ.ttm].\
-                            add_site_role(
-                                jid_to_reg,
-                                role
-                                )
-                    except:
-                        messages.append(
-                            {'type': 'error',
-                             'text': "can't add role. is already registered?"}
-                            )
-                    else:
-                        messages.append(
-                            {'type': 'info',
-                             'text': 'registration successful'}
-                            )
-
-                        self._ssh_git_host.user_create(jid_to_reg)
-
-                else:
-                    messages.append(
-                        {'type': 'error',
-                         'text': "registration not allowed"}
-                        )
-
-        return ret
-
-    def login(self, comm, opts, args, adds):
-
-        if not self._environ:
-            raise ValueError("use set_environ() method")
-
-        ret = 0
-        asker_jid = adds['asker_jid']
-        messages = adds['messages']
-
-        roles = self._environ.get_site_roles_for_jid(asker_jid)
-
-        cookie = None
-
-        error = False
-
-        if len(args) != 1:
             messages.append(
                 {'type': 'error',
-                 'text': "Cookie is required parameter"}
+                 'text': "Invalid arguments count"}
                 )
             error = True
+
+        try:
+            target_jid = org.wayround.xmpp.core.JID.new_from_str(target_jid)
+        except:
+            messages.append(
+                {'type': 'error',
+                 'text': "Can't parse target JID"}
+                )
+            error = True
+
+        if not error:
+            ret = self._controller.register(
+                asker_jid,
+                target_jid,
+                role,
+                messages
+                )
         else:
-            cookie = args[0]
-
-        if error:
-            pass
-        else:
-
-            if roles['site_role'] == 'guest':
-                messages.append(
-                    {'type': 'error',
-                     'text': "You are not registered"}
-                    )
-            else:
-
-                session = self._environ.rtenv.modules[self._environ.ttm].\
-                    get_session_by_cookie(
-                        cookie
-                        )
-
-                if not session:
-                    messages.append(
-                        {'type': 'error',
-                         'text': "Invalid session cookie"}
-                        )
-                else:
-
-                    if ((roles['site_role'] == 'admin')
-                        or (roles['site_role'] != 'admin'
-                                    and
-                                    self._environ.login_access_check(asker_jid)
-                                    )
-                        ):
-
-                        self._environ.rtenv.modules[self._environ.ttm].\
-                            assign_jid_to_session(
-                                session,
-                                asker_jid
-                                )
-
-                        messages.append(
-                            {'type': 'info',
-                             'text': "Logged in"}
-                            )
-
-                    else:
-
-                        messages.append(
-                            {'type': 'error',
-                             'text': "Loggin forbidden"}
-                            )
+            ret = int(error)
 
         return ret
 
     def set_key(self, comm, opts, args, adds):
+        """
+        Set Your public key
 
-        if not self._environ:
-            raise ValueError("use set_environ() method")
+        -j=JID    -  select for who set supplied key (this is for admin only)
+
+        whis working following way (example):
+
+        site set_key
+        ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC6nTLCVTT49cG0U3ELLoXq0bWAaZpiyE2
+        7isZaH5ULNl8BpXxUSj/zr0Wt4Rr7g9ZBXvcXjyQvhr+mZgmdH+6f3C3R3TjIFFUEY2St9O
+        BzEho6t53ycA+ubAS47cYhXIKTwtFVSDYq7o5B0ORojnsd78N7rdsV7YRwcUQy3JiEXXcJv
+        cdi2XyfktdR1XTv81srikhkrToTE54MnhTc1Jgm6KrBy++4VOFj35gTASL39rK5mZxPzyW9
+        PI/mAXo08CRzcxc0tNP5pxKx8gXSVy3weeUu4laqO8Hko6xWFZlNrkwMpC/brItphIAuuQm
+        kgbv4rSfy7k5GpV97G/vzVjCZ animus@wayround.org
+
+        where text after 'site set_key' is copy/paste from Your .ssh/*.pub key
+        """
+
+        if not self._controller:
+            raise ValueError("use set_controller() method")
 
         ret = 0
         asker_jid = adds['asker_jid']
         stanza = adds['stanza']
         messages = adds['messages']
 
-        roles = self._environ.get_site_roles_for_jid(asker_jid)
+        roles = self._controller.get_role(asker_jid, asker_jid)
 
         error = False
 
-        msg_msg_lines = stanza.get_body()[0].get_text().splitlines()
+        full_message_text = stanza.get_body()[0].get_text()
 
-        msg = '\n'.join(msg_msg_lines[1:])
-
-        who = asker_jid
+        target_jid = asker_jid
 
         if '-j' in opts:
-            if roles['site_role'] != 'admin':
-                messages.append(
-                    {'type': 'error',
-                     'text': "Only admin allowed to use parameter -j"}
-                    )
-                error = True
-            else:
-                who = opts['-j']
+            target_jid = opts['-j']
 
         if not error:
-            self._environ.rtenv.modules[self._environ.ttm].user_set_public_key(
-                who, msg
-                )
-
-        if error:
-            ret = 1
-
-        return ret
-
-    def home_list(self, comm, opts, args, adds):
-
-        ret = 0
-        asker_jid = adds['asker_jid']
-        stanza = adds['stanza']
-        messages = adds['messages']
-
-        error = False
-
-        if not self._environ.check_permission(
+            self._controller.set_key(
                 asker_jid,
-                'can_read',
-                '/'
-                ):
-            messages.append(
-                {
-                    'type': 'error',
-                    'text': "Not allowed"
-                    }
-                )
-            ret = 2
-
-        else:
-            res = self._ssh_git_host.home_list()
-            messages.append(
-                {
-                    'type': 'text',
-                    'text': repr(res)
-                    }
+                target_jid,
+                full_message_text,
+                messages
                 )
 
         if error:
@@ -407,7 +220,13 @@ class JabberCommands:
 
         return ret
 
-    def home_create(self, comm, opts, args, adds):
+    def ls(self, comm, opts, args, adds):
+        """
+        List homes or repositories in home
+        """
+
+        if not self._controller:
+            raise ValueError("use set_controller() method")
 
         ret = 0
         asker_jid = adds['asker_jid']
@@ -416,39 +235,31 @@ class JabberCommands:
 
         error = False
 
-        for_ = asker_jid
-
-        asker_roles = self._environ.get_site_roles_for_jid(asker_jid)
-
-        if '-j' in opts:
-            for_ = opts['-j']
-
-        if for_ != asker_jid and 'admin' not in asker_roles:
+        home_level = None
+        len_args = len(args)
+        if len_args == 0:
+            pass
+        elif len_args == 1:
+            home_level = args[0]
+        else:
             messages.append(
                 {
                     'type': 'error',
-                    'text': "Not allowed"
+                    'text': "Invalid arguments count"
                     }
                 )
-            ret = 3
+            error = True
 
-        if ret == 0:
+        if not error:
 
-            if not self._environ.check_permission(
-                    asker_jid,
-                    'can_write',
-                    '/'
-                    ):
-                messages.append(
-                    {
-                        'type': 'error',
-                        'text': "Not allowed"
-                        }
-                    )
-                ret = 2
+            res = self._controller.list(
+                asker_jid,
+                asker_jid,
+                home_level=home_level,
+                messages=messages
+                )
 
-            else:
-                res = self._ssh_git_host.home_create()
+            if res is not None:
                 messages.append(
                     {
                         'type': 'text',
@@ -456,48 +267,171 @@ class JabberCommands:
                         }
                     )
 
-        if error:
+            else:
+                ret = 2
+
+        else:
             ret = 1
 
         return ret
 
-    def help(self, comm, opts, args, adds):
+    def set_role(self, comm, opts, args, adds):
+        """
+        Set some one's role for site, home or repository.
 
-        if not self._environ:
-            raise ValueError("use set_environ() method")
+        Usage: subject_jid path role
+
+        Only admin can change roles for entire site.
+
+        Home owner can change other's roles for own home or repositories only.
+
+        Possible site roles are: ['admin', 'user', 'guest', 'blocked']
+        Possible home roles are: ['owner', 'user', 'guest', 'blocked']
+        Possible repo roles are: ['owner', 'user', 'guest', 'blocked']
+
+        BUT: role which can be passed to this function are:
+
+        Possible site roles are: ['admin', 'user', 'guest', 'blocked']
+        Possible home roles are: ['user', 'guest', 'blocked']
+        Possible repo roles are: ['user', 'guest', 'blocked']
+
+        Keep in mind: site admin is allways has full access to everything on
+                      site
+        """
 
         ret = 0
-        ret_stanza = adds['ret_stanza']
 
-        text = """
-help                          this command
+        asker_jid = adds['asker_jid']
+        stanza = adds['stanza']
+        messages = adds['messages']
 
-status [JID]                  JID roles on site. defaults to asker. Only admin
-                              can define JID
+        error = False
 
-register [-r=ROLE] [JID]      register [self] or [somebody else](only admin can
-                              do this) on site.
+        subject_jid = None
+        path = None
+        role = None
 
-                              possible roles: 'admin', 'moder', 'user',
-                                              'blocked'
-
-                              default role is 'user'
-
-                              already registered user can not be registered
-                              again
-
-                              non registered user has role 'guest'
-
-                              when user registers self, he can not use -r
-                              parameter, and -r will always be 'user'.
-
-                              register will succeed only if it is not
-                              prohibited on site.
-"""
-        ret_stanza.body = [
-            org.wayround.xmpp.core.MessageBody(
-                text=text
+        if not len(args) == 3:
+            messages.append(
+                {
+                    'type': 'error',
+                    'text': 'invalid count of arguments'
+                }
                 )
-            ]
+            error = True
+
+        else:
+            subject_jid, path, role = args
+
+            try:
+                subject_jid = org.wayround.xmpp.core.jid_to_bare(subject_jid)
+            except:
+                messages.append(
+                    {'type': 'error',
+                     'text': "Can't parse Your JID"}
+                    )
+                error = True
+
+        if not error:
+
+            try:
+                self._controller.set_role_by_path(
+                    asker_jid,
+                    subject_jid,
+                    path=path,
+                    role=role,
+                    messages=messages
+                    )
+            except Exception as e:
+                messages.append(
+                    {'type': 'error',
+                     'text': e.args[0]}
+                    )
+                error = True
 
         return ret
+
+    def set_set(self, comm, opts, args, adds):
+
+        ret = 0
+
+        asker_jid = adds['asker_jid']
+        stanza = adds['stanza']
+        messages = adds['messages']
+
+        path = '/'
+        name = None
+        value = None
+
+        args_l = len(args)
+
+        if args_l == 0:
+            messages.append(
+                {
+                    'type': 'error'
+                    'text': "path - is required argument"
+                    }
+                )
+            ret = 1
+
+        else:
+
+            if args_l > 0:
+                path = args[0]
+
+            if args_l > 1:
+                name = args[1]
+
+            if args_l > 2:
+                value = args[2]
+
+            if args_l > 3:
+                messages.append(
+                    {
+                        'type': 'error'
+                        'text': "Too many arguments"
+                        }
+                    )
+                ret = 2
+
+        if ret == 0:
+
+            ret = self._controller.set_site_setting_by_path(
+                asker_jid,
+                path,
+                name,
+                value,
+                messages
+                )
+
+        return ret
+
+    set_set.__doc__ = """
+        Get/Set some site/home/repo setting
+
+        path [name [value]]
+
+        If name not given - list all settings and values for path
+
+        If value not given - get value, else - set value
+
+        acceptable site setting names are:
+            {}
+        acceptable home setting names are:
+            {}
+        acceptable repo setting names are:
+            {}
+        """.format(
+        ', '.join(
+            list(
+                org.wayround.gitpub.modules.GitPub.ACCEPTABLE_SITE_SETTINGS.keys())
+            ),
+        ', '.join(
+            list(
+                org.wayround.gitpub.modules.GitPub.ACCEPTABLE_HOME_SETTINGS.keys())
+            ),
+        ', '.join(
+            list(
+                org.wayround.gitpub.modules.GitPub.ACCEPTABLE_REPO_SETTINGS.keys())
+            ),
+        )

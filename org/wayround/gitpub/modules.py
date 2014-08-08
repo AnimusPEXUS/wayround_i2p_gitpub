@@ -1,4 +1,7 @@
+
+import collections
 import os.path
+
 
 import sqlalchemy.orm.exc
 
@@ -7,6 +10,30 @@ import org.wayround.softengine.rtenv
 
 class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
+    ACCEPTABLE_SITE_SETTINGS = collections.OrderedDict([
+        ('site_title', "No title"),
+        ('guest_can_list_homes', False),
+        ('guest_can_register_self', False)
+        ])
+
+    ACCEPTABLE_HOME_SETTINGS = collections.OrderedDict([
+        ('title', "No title"),
+        ('description', "No description"),
+        ('site', ''),
+        ('users_can_list_repos', False),
+        ('guest_can_list_repos', False)
+        ])
+
+    ACCEPTABLE_REPO_SETTINGS = collections.OrderedDict([
+        ('title', "No title"),
+        ('description', "No description"),
+        ('site', ''),
+        ('users_can_read', False),
+        ('users_can_write', False),
+        ('guest_can_read', False),
+        ('guest_can_write', False)
+        ])
+
     def __init__(self, rtenv):
 
         self.module_name = 'org_wayround_gitpub_modules_GitPub'
@@ -14,15 +41,15 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         self.session_lifetime = 24 * 60 * 60
 
         self.site_roles = [
-            'admin', 'user', 'guest'
+            'admin', 'user', 'guest', 'blocked'
             ]
 
         self.home_roles = [
-            'admin', 'user', 'guest'
+            'owner', 'user', 'guest', 'blocked'
             ]
 
-        self.repository_roles = [
-            'admin', 'user', 'guest'
+        self.repo_roles = [
+            'owner', 'user', 'guest', 'blocked'
             ]
 
         self.template_dir = \
@@ -72,37 +99,15 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
                 )
 
             value = sqlalchemy.Column(
-                sqlalchemy.UnicodeText,
-                nullable=False,
-                default=''
+                sqlalchemy.PickleType,
+                nullable=False
                 )
 
         class HomeSetting(self.rtenv.db.db_base):
 
             __tablename__ = self.module_name + '_HomeSettings'
 
-            home = sqlalchemy.Column(
-                sqlalchemy.UnicodeText,
-                primary_key=True
-                )
-
-            enabled = sqlalchemy.Column(
-                sqlalchemy.Boolean,
-                nullable=False,
-                default=False
-                )
-
-            guests_can_view = sqlalchemy.Column(
-                sqlalchemy.Boolean,
-                nullable=False,
-                default=False
-                )
-
-        class RepositorySetting(self.rtenv.db.db_base):
-
-            __tablename__ = self.module_name + '_RepositorySettings'
-
-            reid = sqlalchemy.Column(
+            hosid = sqlalchemy.Column(
                 sqlalchemy.Integer,
                 primary_key=True,
                 autoincrement=True
@@ -113,27 +118,44 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
                 nullable=False
                 )
 
-            repository = sqlalchemy.Column(
+            name = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
                 nullable=False
                 )
 
-            title = sqlalchemy.Column(
-                sqlalchemy.UnicodeText,
-                nullable=True,
-                default=None
+            value = sqlalchemy.Column(
+                sqlalchemy.PickleType,
+                nullable=False
                 )
 
-            description = sqlalchemy.Column(
-                sqlalchemy.UnicodeText,
-                nullable=True,
-                default=None
+        class RepositorySetting(self.rtenv.db.db_base):
+
+            __tablename__ = self.module_name + '_RepositorySettings'
+
+            resid = sqlalchemy.Column(
+                sqlalchemy.Integer,
+                primary_key=True,
+                autoincrement=True
                 )
 
-            guests_can_view = sqlalchemy.Column(
-                sqlalchemy.Boolean,
-                nullable=False,
-                default=False
+            home = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=False
+                )
+
+            repo = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=False
+                )
+
+            name = sqlalchemy.Column(
+                sqlalchemy.UnicodeText,
+                nullable=False
+                )
+
+            value = sqlalchemy.Column(
+                sqlalchemy.PickleType,
+                nullable=False
                 )
 
         class SiteRole(self.rtenv.db.db_base):
@@ -142,21 +164,13 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
             jid = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
-                primary_key=True,
-                nullable=True,
-                default=None
+                primary_key=True
                 )
 
             role = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
                 nullable=False,
                 default='guest'
-                )
-
-            enabled = sqlalchemy.Column(
-                sqlalchemy.Boolean,
-                nullable=False,
-                default=True
                 )
 
         class HomeRole(self.rtenv.db.db_base):
@@ -201,7 +215,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
                 nullable=False
                 )
 
-            repository = sqlalchemy.Column(
+            repo = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
                 nullable=False
                 )
@@ -264,9 +278,10 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             'PublicKey': PublicKey
         }
 
-    def get_site_setting(self, name, default=None):
+    def get_site_setting(self, name):
 
-        ret = default
+        if name not in self.ACCEPTABLE_SITE_SETTINGS:
+            raise ValueError("invalid `name'")
 
         res = None
 
@@ -275,105 +290,127 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
                 self.rtenv.models[self.module_name]['SiteSetting']
             ).filter_by(name=name).one()
         except sqlalchemy.orm.exc.NoResultFound:
-            pass
+
+            self.set_site_setting(name, self.ACCEPTABLE_SITE_SETTINGS[name])
+
+            ret = self.get_site_setting(name)
+
         else:
-            ret = res.value
+            ret = res
 
         return ret
 
     def set_site_setting(self, name, value):
 
-        res = self.get_site_setting(name, None)
+        if name not in self.ACCEPTABLE_SITE_SETTINGS:
+            raise ValueError("invalid `name'")
+
+        if not isinstance(value, type(self.ACCEPTABLE_SITE_SETTINGS[name])):
+            raise TypeError(
+                "invalid site setting `{}' value type".format(name)
+                )
+
+        res = self.get_site_setting(name)
 
         if res is None:
             res = self.rtenv.models[self.module_name]['SiteSetting']()
-            res.name = name
-            res.value = value
-
             self.rtenv.db.sess.add(res)
-        else:
-            res.value = value
+
+        res.name = name
+        res.value = value
 
         self.rtenv.db.sess.commit()
 
         return
 
-    def list_homes(self):
+    def get_home_setting(self, home, name):
 
-        ret = set()
+        if name not in self.ACCEPTABLE_HOME_SETTINGS:
+            raise ValueError("invalid `name'")
+
+        res = None
 
         try:
-            p = self.rtenv.db.sess.query(
+            res = self.rtenv.db.sess.query(
                 self.rtenv.models[self.module_name]['HomeSetting']
-            ).all()
+            ).filter_by(name=name).one()
         except sqlalchemy.orm.exc.NoResultFound:
-            pass
+
+            self.set_home_setting(name, self.ACCEPTABLE_HOME_SETTINGS[name])
+
+            ret = self.get_home_setting(name)
 
         else:
-            for i in p:
-                ret.add(i.home)
+            ret = res
 
-        return sorted(list(ret))
+        return ret
 
-    def get_home_setting(self, home):
-        p = None
-        try:
-            p = self.rtenv.db.sess.query(
-                self.rtenv.models[self.module_name]['HomeSetting']
-            ).filter_by(home=home).one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            pass
+    def set_home_setting(self, home, name, value):
 
-        return p
+        if name not in self.ACCEPTABLE_HOME_SETTINGS:
+            raise ValueError("invalid `name'")
 
-    def set_home_setting(self, data):
+        if not isinstance(value, type(self.ACCEPTABLE_HOME_SETTINGS[name])):
+            raise TypeError(
+                "invalid home setting `{}' value type".format(name)
+                )
 
-        p = self.get_home_setting(data.home)
+        res = self.get_home_setting(name)
 
-        if p is None:
-            self.rtenv.db.sess.add(data)
+        if res is None:
+            res = self.rtenv.models[self.module_name]['HomeSetting']()
+            self.rtenv.db.sess.add(res)
+
+        res.home = home
+        res.name = name
+        res.value = value
 
         self.rtenv.db.sess.commit()
 
         return
 
-    def list_repositories(self, home):
+    def get_repo_setting(self, home, repo, name):
 
-        ret = set()
+        if name not in self.ACCEPTABLE_REPO_SETTINGS:
+            raise ValueError("invalid `name'")
+
+        res = None
 
         try:
-            p = self.rtenv.db.sess.query(
+            res = self.rtenv.db.sess.query(
                 self.rtenv.models[self.module_name]['RepositorySetting']
-            ).filter_by(home=home).all()
+            ).filter_by(name=name).one()
         except sqlalchemy.orm.exc.NoResultFound:
-            pass
+
+            self.set_repo_setting(name, self.ACCEPTABLE_REPO_SETTINGS[name])
+
+            ret = self.get_repo_setting(name)
 
         else:
-            for i in p:
-                ret.add(i.repository)
+            ret = res
 
-        return sorted(list(ret))
+        return ret
 
-    def get_repository_setting(self, home, repository):
-        p = None
-        try:
-            p = self.rtenv.db.sess.query(
-                self.rtenv.models[self.module_name]['RepositorySetting']
-            ).filter_by(
-                home=home,
-                repository=repository
-            ).one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            pass
+    def set_repo_setting(self, home, repo, name, value):
 
-        return p
+        if name not in self.ACCEPTABLE_REPO_SETTINGS:
+            raise ValueError("invalid `name'")
 
-    def set_repository_setting(self, data):
+        if not isinstance(value, type(self.ACCEPTABLE_REPO_SETTINGS[name])):
+            raise TypeError(
+                "invalid repo setting `{}' value type".format(name)
+                )
 
-        p = self.get_repository_setting(data.home, data.repository)
+        res = self.get_repo_setting(name)
 
-        if p is None:
-            self.rtenv.db.sess.add(data)
+        if res is None:
+            res = self.rtenv.models[self.module_name]['RepositorySetting']()
+            self.rtenv.db.sess.add(res)
+
+        res.home = home
+        res.repo = repo
+        res.name = name
+        res.value = value
 
         self.rtenv.db.sess.commit()
 
@@ -419,7 +456,10 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     def set_site_role(self, jid, role):
 
-        if role in [None, 'guest']:
+        if not role in ['admin', 'user', 'guest', 'blocked']:
+            raise ValueError("invalid `role' value")
+
+        if role == 'guest':
 
             try:
                 res = self.rtenv.db.sess.query(
@@ -467,7 +507,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return
 
     def del_site_role(self, jid):
-        self.set_site_role(jid, None)
+        self.set_site_role(jid, 'guest')
         return
 
     def dict_home_roles(self, home):
@@ -492,7 +532,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         ret = 'guest'
 
         if home == jid:
-            ret = 'admin'
+            ret = 'owner'
         else:
 
             try:
@@ -514,7 +554,10 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     def set_home_role(self, home, jid, role):
 
-        if role in [None, 'guest']:
+        if not role in ['user', 'guest', 'blocked']:
+            raise ValueError("invalid `role' value")
+
+        if role == 'guest':
 
             try:
                 res = self.rtenv.db.sess.query(
@@ -562,10 +605,10 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return
 
     def del_home_role(self, home, jid):
-        self.set_home_role(home, jid, None)
+        self.set_home_role(home, jid, 'guest')
         return
 
-    def dict_repository_roles(self, home, repository):
+    def dict_repo_roles(self, home, repo):
 
         ret = {}
 
@@ -574,7 +617,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
                 self.rtenv.models[self.module_name]['RepositoryRole']
             ).filter_by(
                 home=home,
-                repository=repository
+                repo=repo
             ).all()
         except sqlalchemy.orm.exc.NoResultFound:
             pass
@@ -585,12 +628,12 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
         return ret
 
-    def get_repository_role(self, home, repository, jid):
+    def get_repo_role(self, home, repo, jid):
 
         ret = 'guest'
 
         if home == jid:
-            ret = 'admin'
+            ret = 'owner'
         else:
 
             try:
@@ -598,7 +641,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
                     self.rtenv.models[self.module_name]['RepositoryRole']
                 ).filter_by(
                     home=home,
-                    repository=repository,
+                    repo=repo,
                     jid=jid
                 ).one()
             except sqlalchemy.orm.exc.NoResultFound:
@@ -606,7 +649,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             else:
                 ret = res.role
 
-                if ret not in self.repository_roles or ret is 'guest':
+                if ret not in self.repo_roles or ret is 'guest':
                     self.rtenv.db.sess.delete(res)
                     self.rtenv.db.sess.commit()
 
@@ -614,16 +657,19 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
             return ret
 
-    def set_repository_role(self, home, repository, jid, role):
+    def set_repo_role(self, home, repo, jid, role):
 
-        if role in [None, 'guest']:
+        if not role in ['user', 'guest', 'blocked']:
+            raise ValueError("invalid `role' value")
+
+        if role == 'guest':
 
             try:
                 res = self.rtenv.db.sess.query(
                     self.rtenv.models[self.module_name]['RepositoryRole']
                 ).filter_by(
                     home=home,
-                    repository=repository,
+                    repo=repo,
                     jid=jid
                 ).all()
             except sqlalchemy.orm.exc.NoResultFound:
@@ -640,7 +686,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
                     self.rtenv.models[self.module_name]['RepositoryRole']
                 ).filter_by(
                     home=home,
-                    repository=repository,
+                    repo=repo,
                     jid=jid
                 ).all()
             except sqlalchemy.orm.exc.NoResultFound:
@@ -654,7 +700,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
                 p = self.rtenv.models[self.module_name]['RepositoryRole']()
                 p.home = home
-                p.repository = repository
+                p.repo = repo
                 p.jid = jid
                 self.rtenv.db.sess.add(p)
 
@@ -672,8 +718,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
         return
 
-    def del_repository_role(self, repository, jid):
-        self.set_repository_role(repository, jid, None)
+    def del_repo_role(self, home, repo, jid):
+        self.set_repo_role(home, repo, jid, 'guest')
         return
 
     def get_public_key(self, jid):
@@ -728,7 +774,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     def set_public_key(self, jid, msg):
 
-        if self.is_has_public_key(jid):
+        if self.user_is_has_public_key(jid):
             self.del_public_key(jid)
 
         ret = 0
