@@ -20,7 +20,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         ('title', "No title"),
         ('description', "No description"),
         ('site', ''),
-        ('users_can_list_repos', False),
+        ('user_can_list_repos', False),
         ('guest_can_list_repos', False)
         ])
 
@@ -28,8 +28,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         ('title', "No title"),
         ('description', "No description"),
         ('site', ''),
-        ('users_can_read', False),
-        ('users_can_write', False),
+        ('user_can_read', False),
+        ('user_can_write', False),
         ('guest_can_read', False),
         ('guest_can_write', False)
         ])
@@ -284,6 +284,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             raise ValueError("invalid `name'")
 
         res = None
+        ret = None
 
         try:
             res = self.rtenv.db.sess.query(
@@ -291,7 +292,11 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             ).filter_by(name=name).one()
         except sqlalchemy.orm.exc.NoResultFound:
 
-            self.set_site_setting(name, self.ACCEPTABLE_SITE_SETTINGS[name])
+            self.set_site_setting(
+                name,
+                self.ACCEPTABLE_SITE_SETTINGS[name],
+                _assume_absent=True
+                )
 
             ret = self.get_site_setting(name)
 
@@ -300,17 +305,24 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
         return ret
 
-    def set_site_setting(self, name, value):
+    def set_site_setting(self, name, value, _assume_absent=False):
 
         if name not in self.ACCEPTABLE_SITE_SETTINGS:
             raise ValueError("invalid `name'")
+
+        if value is not None:
+            if isinstance(self.ACCEPTABLE_SITE_SETTINGS[name], bool):
+
+                value = _value_to_bool(value)
 
         if not isinstance(value, type(self.ACCEPTABLE_SITE_SETTINGS[name])):
             raise TypeError(
                 "invalid site setting `{}' value type".format(name)
                 )
 
-        res = self.get_site_setting(name)
+        res = None
+        if not _assume_absent:
+            res = self.get_site_setting(name)
 
         if res is None:
             res = self.rtenv.models[self.module_name]['SiteSetting']()
@@ -329,6 +341,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             raise ValueError("invalid `name'")
 
         res = None
+        ret = None
 
         try:
             res = self.rtenv.db.sess.query(
@@ -336,26 +349,38 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             ).filter_by(name=name).one()
         except sqlalchemy.orm.exc.NoResultFound:
 
-            self.set_home_setting(name, self.ACCEPTABLE_HOME_SETTINGS[name])
+            self.set_home_setting(
+                home,
+                name,
+                self.ACCEPTABLE_HOME_SETTINGS[name],
+                _assume_absent=True
+                )
 
-            ret = self.get_home_setting(name)
+            ret = self.get_home_setting(home, name)
 
         else:
             ret = res
 
         return ret
 
-    def set_home_setting(self, home, name, value):
+    def set_home_setting(self, home, name, value, _assume_absent=False):
 
         if name not in self.ACCEPTABLE_HOME_SETTINGS:
             raise ValueError("invalid `name'")
+
+        if value is not None:
+            if isinstance(self.ACCEPTABLE_HOME_SETTINGS[name], bool):
+
+                value = _value_to_bool(value)
 
         if not isinstance(value, type(self.ACCEPTABLE_HOME_SETTINGS[name])):
             raise TypeError(
                 "invalid home setting `{}' value type".format(name)
                 )
 
-        res = self.get_home_setting(name)
+        res = None
+        if not _assume_absent:
+            res = self.get_home_setting(name, name)
 
         if res is None:
             res = self.rtenv.models[self.module_name]['HomeSetting']()
@@ -375,6 +400,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             raise ValueError("invalid `name'")
 
         res = None
+        ret = None
 
         try:
             res = self.rtenv.db.sess.query(
@@ -382,26 +408,39 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             ).filter_by(name=name).one()
         except sqlalchemy.orm.exc.NoResultFound:
 
-            self.set_repo_setting(name, self.ACCEPTABLE_REPO_SETTINGS[name])
+            self.set_repo_setting(
+                home,
+                repo,
+                name,
+                self.ACCEPTABLE_REPO_SETTINGS[name],
+                _assume_absent=True
+                )
 
-            ret = self.get_repo_setting(name)
+            ret = self.get_repo_setting(home, repo, name)
 
         else:
             ret = res
 
         return ret
 
-    def set_repo_setting(self, home, repo, name, value):
+    def set_repo_setting(self, home, repo, name, value, _assume_absent=False):
 
         if name not in self.ACCEPTABLE_REPO_SETTINGS:
             raise ValueError("invalid `name'")
+
+        if value is not None:
+            if isinstance(self.ACCEPTABLE_REPO_SETTINGS[name], bool):
+
+                value = _value_to_bool(value)
 
         if not isinstance(value, type(self.ACCEPTABLE_REPO_SETTINGS[name])):
             raise TypeError(
                 "invalid repo setting `{}' value type".format(name)
                 )
 
-        res = self.get_repo_setting(name)
+        res = None
+        if not _assume_absent:
+            res = self.get_repo_setting(name, repo, name)
 
         if res is None:
             res = self.rtenv.models[self.module_name]['RepositorySetting']()
@@ -826,3 +865,12 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             ret.add(i.jid)
 
         return sorted(list(ret))
+
+
+def _value_to_bool(value):
+    if isinstance(value, str):
+        value = value.lower()
+
+    ret = value in [True, 1, '1', 'yes', 'true', 'ok', 'y']
+
+    return ret

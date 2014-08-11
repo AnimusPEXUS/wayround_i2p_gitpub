@@ -1,5 +1,6 @@
 
 import os
+import collections
 
 import org.wayround.xmpp.core
 import org.wayround.sshgithost.sshgithost
@@ -542,9 +543,12 @@ class Controller:
 
                         # if guest or blocked
 
-                        if self.rtenv.modules[self.ttm].get_site_setting(
+                        if self.get_setting(
+                                self.admin_jid,
+                                None,
+                                None,
                                 'guest_can_list_homes',
-                                False
+                                messages
                                 ):
 
                             # if guests can list homes
@@ -612,14 +616,13 @@ class Controller:
 
                             # if guest or blocked - can if guests allowed
 
-                            home_setting = self.rtenv.modules[
-                                self.ttm
-                                ].get_home_setting(
-                                    subject_jid
-                                    )
-
-                            if (home_setting is not None
-                                    and home_setting.guests_can_view):
+                            if self.get_setting(
+                                    self.admin_jid,
+                                    home_level,
+                                    None,
+                                    'guest_can_list_repos',
+                                    messages
+                                    ):
                                 ret = True
                             else:
                                 messages.append(
@@ -634,9 +637,19 @@ class Controller:
                                         }
                                     )
 
-                        else:
+                        elif subject_jid_home_role == 'user':
                             # only users left. they can view
-                            ret = True
+                            if self.get_setting(
+                                    self.admin_jid,
+                                    home_level,
+                                    None,
+                                    'user_can_list_repos',
+                                    messages
+                                    ):
+                                ret = True
+
+                        else:
+                            raise Exception("programming error")
 
                 elif home_level is not None and repo_level is not None:
 
@@ -671,14 +684,12 @@ class Controller:
 
                             # if guest or blocked - can if guests allowed
 
-                            repo_setting = self.rtenv.modules[
-                                self.ttm
-                                ].get_repo_setting(
-                                    subject_jid
-                                    )
-
-                            if (repo_setting is not None
-                                    and repo_setting.guests_can_view
+                            if self.get_setting(
+                                    self.admin_jid,
+                                    home_level,
+                                    repo_level,
+                                    'guest_can_read',
+                                    messages
                                     ):
                                 ret = True
                             else:
@@ -694,9 +705,16 @@ class Controller:
                                                 )
                                         }
                                     )
-
+                        elif == 'user':
+                            if self.get_setting(
+                                    self.admin_jid,
+                                    home_level,
+                                    repo_level,
+                                    'user_can_read',
+                                    messages
+                                    ):
+                                ret = True
                         else:
-                            # only users left. they can view
                             ret = True
 
                 else:
@@ -708,16 +726,17 @@ class Controller:
 
                 if home_level is None and repo_level is None:
 
-                    if self.check_permission(
-                            actor_jid,
-                            subject_jid,
-                            'can_read',
-                            home_level=None,
-                            repo_level=None,
-                            messages=messages
-                            ):
-
-                        if self.get_role(actor_jid, subject_jid) == 'admin':
+                    if self.get_role(actor_jid, subject_jid) == 'admin':
+                        ret = True
+                    else:
+                        if self.check_permission(
+                                actor_jid,
+                                subject_jid,
+                                'can_read',
+                                home_level=None,
+                                repo_level=None,
+                                messages=messages
+                                ):
                             ret = True
 
                 elif home_level is not None and repo_level is None:
@@ -735,7 +754,7 @@ class Controller:
                                 actor_jid,
                                 subject_jid,
                                 home_level
-                                ) == 'admin':
+                                ) == 'owner':
                             ret = True
 
                 elif home_level is not None and repo_level is not None:
@@ -757,8 +776,32 @@ class Controller:
                                 repo_level
                                 )
 
-                        if subject_jid_repo_role in ['admin', 'user']:
+                        if subject_jid_repo_role == 'owner':
                             ret = True
+
+                        elif subject_jid_repo_role == 'user':
+                            if self.get_setting(
+                                    self.admin_jid,
+                                    home_level,
+                                    repo_level,
+                                    'user_can_write',
+                                    messages
+                                    ):
+                                ret = True
+
+                        elif subject_jid_repo_role == 'guest':
+                            if self.get_setting(
+                                    self.admin_jid,
+                                    home_level,
+                                    repo_level,
+                                    'guest_can_write',
+                                    messages
+                                    ):
+                                ret = True
+                        elif subject_jid_repo_role == 'blocked':
+                            ret = False
+                        else:
+                            raise Exception("programming error")
 
                 else:
                     raise Exception("invalid param combination")
@@ -846,27 +889,18 @@ class Controller:
 
         return ret
 
-    def set_site_setting_by_path(
+    def get_setting_by_path(
             self,
             actor_jid,
             path,
             name,
-            value,
             messages
             ):
-
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-
-        home_level, repo_level, rest = \
-            org.wayround.sshgithost.sshgithost.get_levels('/', path)
-
-        return self.set_site_setting(
-            self,
+        return self.set_setting_by_path(
             actor_jid,
-            home_level,
-            repo_level,
+            path,
             name,
-            value,
+            None,
             messages
             )
 
@@ -887,6 +921,29 @@ class Controller:
             messages
             )
 
+    def set_setting_by_path(
+            self,
+            actor_jid,
+            path,
+            name,
+            value,
+            messages
+            ):
+
+        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
+
+        home_level, repo_level, rest = \
+            org.wayround.sshgithost.sshgithost.get_levels('/', path)
+
+        return self.set_setting(
+            actor_jid,
+            home_level,
+            repo_level,
+            name,
+            value,
+            messages
+            )
+
     def set_setting(
             self,
             actor_jid,
@@ -896,6 +953,8 @@ class Controller:
             value,
             messages
             ):
+
+        ret = 0
 
         check_level_value_combination(home_level, repo_level)
 
@@ -922,20 +981,14 @@ class Controller:
 
             else:
                 if name is not None:
-                    messages.append(
-                        {'type': 'text',
-                         'text': "{} == {}".format(
-                             name,
-                             self.rtenv.modules[self.ttm].get_site_setting(
-                                 name
-                                 ).value
-                             )
-                         }
-                        )
+                    ret = self.rtenv.modules[self.ttm].get_site_setting(
+                        name
+                        ).value
                 else:
-                    for i in self.rtenv.modules[self.ttm].GitPub.\
+                    ret = collections.OrderedDict()
+                    for i in self.rtenv.modules[self.ttm].\
                             ACCEPTABLE_SITE_SETTINGS.keys():
-                        self.get_setting(
+                        ret[i] = self.get_setting(
                             actor_jid,
                             None,
                             None,
@@ -959,21 +1012,15 @@ class Controller:
                         )
             else:
                 if name is not None:
-                    messages.append(
-                        {'type': 'text',
-                         'text': "{} == {}".format(
-                             name,
-                             self.rtenv.modules[self.ttm].get_home_setting(
-                                 home_level,
-                                 name
-                                 ).value
-                             )
-                         }
-                        )
+                    ret = self.rtenv.modules[self.ttm].get_home_setting(
+                        home_level,
+                        name
+                        ).value
                 else:
-                    for i in self.rtenv.modules[self.ttm].GitPub.\
+                    ret = collections.OrderedDict()
+                    for i in self.rtenv.modules[self.ttm].\
                             ACCEPTABLE_HOME_SETTINGS.keys():
-                        self.get_setting(
+                        ret[i] = self.get_setting(
                             actor_jid,
                             home_level,
                             None,
@@ -997,22 +1044,16 @@ class Controller:
                         )
             else:
                 if name is not None:
-                    messages.append(
-                        {'type': 'text',
-                         'text': "{} == {}".format(
-                             name,
-                             self.rtenv.modules[self.ttm].get_repo_setting(
-                                 home_level,
-                                 repo_level,
-                                 name
-                                 ).value
-                             )
-                         }
-                        )
+                    ret = self.rtenv.modules[self.ttm].get_repo_setting(
+                        home_level,
+                        repo_level,
+                        name
+                        ).value
                 else:
-                    for i in self.rtenv.modules[self.ttm].GitPub.\
+                    ret = collections.OrderedDict()
+                    for i in self.rtenv.modules[self.ttm].\
                             ACCEPTABLE_REPO_SETTINGS.keys():
-                        self.get_setting(
+                        ret[i] = self.get_setting(
                             actor_jid,
                             home_level,
                             repo_level,
@@ -1023,9 +1064,10 @@ class Controller:
         else:
             raise ValueError("Invalid parameter combination")
 
-            error = True
+        if error:
+            ret = 1
 
-        return int(error)
+        return ret
 
 
 def check_level_value_combination(home_level, repo_level):

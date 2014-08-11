@@ -368,7 +368,7 @@ permissions: {}
         if args_l == 0:
             messages.append(
                 {
-                    'type': 'error'
+                    'type': 'error',
                     'text': "path - is required argument"
                     }
                 )
@@ -388,7 +388,7 @@ permissions: {}
             if args_l > 3:
                 messages.append(
                     {
-                        'type': 'error'
+                        'type': 'error',
                         'text': "Too many arguments"
                         }
                     )
@@ -396,13 +396,39 @@ permissions: {}
 
         if ret == 0:
 
-            ret = self._controller.set_site_setting_by_path(
-                asker_jid,
-                path,
-                name,
-                value,
-                messages
-                )
+            try:
+                ret = self._controller.set_setting_by_path(
+                    asker_jid,
+                    path,
+                    name,
+                    value,
+                    messages
+                    )
+            except Exception as e:
+                messages.append(
+                    {'type': 'error',
+                     'text': e.args[0]}
+                    )
+                ret = 3
+            else:
+
+                if ret:
+                    messages.append(
+                        {
+                            'type': 'text',
+                            'text': "{}".format(ret)
+                            }
+                        )
+                    ret = 0
+
+                else:
+                    messages.append(
+                        {
+                            'type': 'error',
+                            'text': "Error returned: {}".format(ret)
+                            }
+                        )
+                    ret = 4
 
         return ret
 
