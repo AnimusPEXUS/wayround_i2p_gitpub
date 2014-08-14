@@ -38,40 +38,6 @@ class Controller:
         self.rtenv = rtenv
         return
 
-    def check_key(self, username, key):
-        """
-        return False or user bare jid
-        """
-
-        ret = False
-
-        b64 = key.get_base64()
-
-        error = False
-        if len(b64) < 5:
-            error = True
-
-        if not error:
-
-            type_ = 'ssh-rsa'
-
-            res = self.rtenv.modules[self.ttm].username_get_by_base64(
-                type_,
-                b64
-                )
-
-            ret = username in res
-
-        if error:
-            ret = False
-
-        return ret
-
-    def register_access_check(self, jid_bare):
-        return self.rtenv.modules[self.ttm].get_site_setting(
-            'guest_can_register_self'
-            ) in ['1', 'True', 'true']
-
     def register(
             self,
             actor_jid,
@@ -155,14 +121,16 @@ class Controller:
 
                 else:
 
-                    if (
-                        (actor_jid_role == 'admin')
-                        or
-                        (actor_jid_role == 'guest'
-                            and self.register_access_check(
-                                actor_jid_bare
-                                )
-                         )
+                    if ((actor_jid_role == 'admin')
+                                or
+                                (actor_jid_role == 'guest'
+                                 and self.self.get_setting(
+                                     self.admin_jid,
+                                     None,
+                                     None,
+                                     'guest_can_register_self'
+                                     )
+                                 )
                             ):
 
                         try:
@@ -503,6 +471,217 @@ class Controller:
             messages
             )
 
+    def _is_can_read_site(
+            self,
+            actor_jid,
+            subject_jid,
+            messages
+            ):
+
+        subject_jid_site_role = self.get_role(
+            actor_jid,
+            subject_jid
+            )
+
+        ret = False
+
+        if subject_jid_site_role in ['guest', 'blocked']:
+
+            # if guest or blocked
+
+            if self.get_setting(
+                    self.admin_jid,
+                    None,
+                    None,
+                    'guest_can_list_homes',
+                    messages
+                    ):
+
+                # if guests can list homes
+
+                ret = True
+            else:
+                messages.append(
+                    {
+                        'type': 'error',
+                        'text':
+                            "subject is `{}'. "
+                            "guests not allowed to "
+                            "read root".format(
+                                subject_jid_site_role
+                                )
+                        }
+                    )
+
+        else:
+            # simple users and admins are allowed
+            ret = True
+
+        return ret
+
+    def _is_can_read_home(
+            self,
+            actor_jid,
+            subject_jid,
+            home_level,
+            messages
+            ):
+
+        ret = False
+
+        if not self.check_permission(
+                actor_jid,
+                subject_jid,
+                'can_read',
+                home_level=None,
+                repo_level=None,
+                messages=messages
+                ):
+
+            # if can't list homes - can't list repositories eather
+
+            messages.append(
+                {
+                    'type': 'error',
+                    'text':
+                        "so, subject is not allowed"
+                        " to read home of `{}'".format(
+                            home_level
+                            )
+                    }
+                )
+
+            ret = False
+
+        else:
+
+            # can list homes, deciding is can list repos
+
+            subject_jid_home_role = self.get_role(
+                actor_jid,
+                subject_jid,
+                home_level
+                )
+
+            if subject_jid_home_role == 'owner':
+                # if owner of this home - sure can
+                ret = True
+            elif subject_jid_home_role in ['guest', 'blocked']:
+
+                # if guest or blocked - can if guests allowed
+
+                if self.get_setting(
+                        self.admin_jid,
+                        home_level,
+                        None,
+                        'guest_can_list_repos',
+                        messages
+                        ):
+                    ret = True
+                else:
+                    messages.append(
+                        {
+                            'type': 'error',
+                            'text':
+                                "`{}' not allowed "
+                                "to read home `{}'".format(
+                                    subject_jid_home_role,
+                                    home_level
+                                    )
+                            }
+                        )
+
+            elif subject_jid_home_role == 'user':
+                # only users left. they can view
+                if self.get_setting(
+                        self.admin_jid,
+                        home_level,
+                        None,
+                        'user_can_list_repos',
+                        messages
+                        ):
+                    ret = True
+
+            else:
+                raise Exception("programming error")
+
+        return ret
+
+    def _is_can_read_repo(
+            self,
+            actor_jid,
+            subject_jid,
+            home_level,
+            repo_level,
+            messages
+            ):
+
+        ret = False
+
+        if not self.check_permission(
+                actor_jid,
+                subject_jid,
+                'can_read',
+                home_level=home_level,
+                repo_level=None,
+                messages=messages
+                ):
+            # can't view if can't list home
+            ret = False
+
+        else:
+            subject_jid_repo_role = self.get_role(
+                actor_jid,
+                subject_jid,
+                home_level,
+                repo_level
+                )
+
+            if subject_jid_repo_role == 'owner':
+                # owner - can view
+                ret = True
+
+            elif subject_jid_repo_role in [
+                    'guest', 'blocked'
+                    ]:
+
+                # if guest or blocked - can if guests allowed
+
+                if self.get_setting(
+                        self.admin_jid,
+                        home_level,
+                        repo_level,
+                        'guest_can_read',
+                        messages
+                        ):
+                    ret = True
+                else:
+                    messages.append(
+                        {
+                            'type': 'error',
+                            'text':
+                                "`{}' not allowed "
+                                "to read repo `{}/{}'".format(
+                                    subject_jid_repo_role,
+                                    home_level,
+                                    repo_level
+                                    )
+                            }
+                        )
+            elif subject_jid_repo_role == 'user':
+                if self.get_setting(
+                        self.admin_jid,
+                        home_level,
+                        repo_level,
+                        'user_can_read',
+                        messages
+                        ):
+                    ret = True
+            else:
+                ret = True
+
+        return ret
+
     def check_permission(
             self,
             actor_jid,
@@ -537,185 +716,34 @@ class Controller:
 
                 if home_level is None and repo_level is None:
 
-                    # site
-
-                    if subject_jid_site_role in ['guest', 'blocked']:
-
-                        # if guest or blocked
-
-                        if self.get_setting(
-                                self.admin_jid,
-                                None,
-                                None,
-                                'guest_can_list_homes',
-                                messages
-                                ):
-
-                            # if guests can list homes
-
-                            ret = True
-                        else:
-                            messages.append(
-                                {
-                                    'type': 'error',
-                                    'text':
-                                        "subject is `{}'. "
-                                        "guests not allowed to "
-                                        "read root".format(
-                                            subject_jid_site_role
-                                            )
-                                    }
-                                )
-
-                    else:
-                        # simple users and admins are allowed
-                        ret = True
+                    ret = self._is_can_read_site(
+                        actor_jid,
+                        subject_jid,
+                        messages
+                        )
 
                 elif home_level is not None and repo_level is None:
 
                     # someone's home
 
-                    if not self.check_permission(
-                            actor_jid,
-                            subject_jid,
-                            'can_read',
-                            home_level=None,
-                            repo_level=None,
-                            messages=messages
-                            ):
-
-                        # if can't list homes - can't list repositories eather
-
-                        messages.append(
-                            {
-                                'type': 'error',
-                                'text':
-                                    "so, subject is not allowed"
-                                    " to read home of `{}'".format(
-                                        home_level
-                                        )
-                                }
-                            )
-
-                        ret = False
-
-                    else:
-
-                        # can list homes, decidind is can list repos
-
-                        subject_jid_home_role = self.get_role(
-                            actor_jid,
-                            subject_jid,
-                            home_level
-                            )
-
-                        if subject_jid_home_role == 'owner':
-                            # if owner of this home - sure can
-                            ret = True
-                        elif subject_jid_home_role in ['guest', 'blocked']:
-
-                            # if guest or blocked - can if guests allowed
-
-                            if self.get_setting(
-                                    self.admin_jid,
-                                    home_level,
-                                    None,
-                                    'guest_can_list_repos',
-                                    messages
-                                    ):
-                                ret = True
-                            else:
-                                messages.append(
-                                    {
-                                        'type': 'error',
-                                        'text':
-                                            "`{}' not allowed "
-                                            "to read home `{}'".format(
-                                                subject_jid_home_role,
-                                                home_level
-                                                )
-                                        }
-                                    )
-
-                        elif subject_jid_home_role == 'user':
-                            # only users left. they can view
-                            if self.get_setting(
-                                    self.admin_jid,
-                                    home_level,
-                                    None,
-                                    'user_can_list_repos',
-                                    messages
-                                    ):
-                                ret = True
-
-                        else:
-                            raise Exception("programming error")
+                    ret = self._is_can_read_home(
+                        actor_jid,
+                        subject_jid,
+                        home_level,
+                        messages
+                        )
 
                 elif home_level is not None and repo_level is not None:
 
                     # some repo in someone's home
 
-                    if not self.check_permission(
-                            actor_jid,
-                            subject_jid,
-                            'can_read',
-                            home_level=home_level,
-                            repo_level=None,
-                            messages=messages
-                            ):
-                        # can't view if can't list home
-                        ret = False
-
-                    else:
-                        subject_jid_repo_role = self.get_role(
-                            actor_jid,
-                            subject_jid,
-                            home_level,
-                            repo_level
-                            )
-
-                        if subject_jid_repo_role == 'owner':
-                            # owner - can view
-                            ret = True
-
-                        elif subject_jid_repo_role in [
-                                'guest', 'blocked'
-                                ]:
-
-                            # if guest or blocked - can if guests allowed
-
-                            if self.get_setting(
-                                    self.admin_jid,
-                                    home_level,
-                                    repo_level,
-                                    'guest_can_read',
-                                    messages
-                                    ):
-                                ret = True
-                            else:
-                                messages.append(
-                                    {
-                                        'type': 'error',
-                                        'text':
-                                            "`{}' not allowed "
-                                            "to read repo `{}/{}'".format(
-                                                subject_jid_repo_role,
-                                                home_level,
-                                                repo_level
-                                                )
-                                        }
-                                    )
-                        elif == 'user':
-                            if self.get_setting(
-                                    self.admin_jid,
-                                    home_level,
-                                    repo_level,
-                                    'user_can_read',
-                                    messages
-                                    ):
-                                ret = True
-                        else:
-                            ret = True
+                    ret = self._is_can_read_repo(
+                        actor_jid,
+                        subject_jid,
+                        home_level,
+                        repo_level,
+                        messages
+                        )
 
                 else:
                     raise Exception("invalid param combination")
@@ -729,15 +757,9 @@ class Controller:
                     if self.get_role(actor_jid, subject_jid) == 'admin':
                         ret = True
                     else:
-                        if self.check_permission(
-                                actor_jid,
-                                subject_jid,
-                                'can_read',
-                                home_level=None,
-                                repo_level=None,
-                                messages=messages
-                                ):
-                            ret = True
+                        # nobody can write to root. registration - is
+                        # absolutely different case in separate method
+                        ret = False
 
                 elif home_level is not None and repo_level is None:
 
@@ -850,6 +872,35 @@ class Controller:
 
         return ret
 
+    def check_key(self, username, key):
+        """
+        return False or user bare jid
+        """
+
+        ret = False
+
+        b64 = key.get_base64()
+
+        error = False
+        if len(b64) < 5:
+            error = True
+
+        if not error:
+
+            type_ = 'ssh-rsa'
+
+            res = self.rtenv.modules[self.ttm].username_get_by_base64(
+                type_,
+                b64
+                )
+
+            ret = username in res
+
+        if error:
+            ret = False
+
+        return ret
+
     def set_key(
             self,
             actor_jid,
@@ -880,9 +931,17 @@ class Controller:
                 error = True
 
         if not error:
-            self.rtenv.modules[self.ttm].set_public_key(
-                who, msg
+            ret = self.rtenv.modules[self.ttm].set_public_key(
+                target_jid,
+                msg
                 )
+
+            if ret != 0:
+                messages.append(
+                    {'type': 'error',
+                     'text':
+                        "Error setting key. Is there some wrong data supplied"}
+                    )
 
         if error:
             ret = 1
