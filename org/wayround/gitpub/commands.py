@@ -2,12 +2,15 @@
 import logging
 import threading
 
+import org.wayround.xmpp.client_bot
+
+import org.wayround.softengine.rtenv
+
 import org.wayround.gitpub.jabber_commands
 import org.wayround.gitpub.modules
 import org.wayround.gitpub.controller
-import org.wayround.softengine.rtenv
+
 import org.wayround.sshgithost.sshgithost
-import org.wayround.xmpp.client_bot
 
 
 def commands():
@@ -24,7 +27,7 @@ def site_start(comm, opts, args, adds):
 
     ret = 0
 
-    db_config = adds['db_config']
+    db_filename = adds['db_filename']
     db_echo = adds['db_echo']
     host = adds['host']
     port = adds['port']
@@ -38,12 +41,7 @@ def site_start(comm, opts, args, adds):
     xmpp_connection_info = adds['xmpp_connection_info']
     xmpp_auth_info = adds['xmpp_auth_info']
 
-    db = org.wayround.softengine.rtenv.DB(
-        db_config,
-        echo=db_echo,
-        # FIXME: this is unsafe?
-        connect_args={'check_same_thread': False}
-        )
+    db = org.wayround.softengine.rtenv.DB_ZODB(db_filename)
 
     rtenv = org.wayround.softengine.rtenv.RuntimeEnvironment(db)
 

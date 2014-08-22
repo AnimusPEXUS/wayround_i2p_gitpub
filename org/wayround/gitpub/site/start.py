@@ -4,6 +4,7 @@ import os.path
 import sys
 
 import org.wayround.utils.program
+import org.wayround.utils.path
 
 import org.wayround.gitpub.commands
 
@@ -38,8 +39,7 @@ adds = {}
 adds['jid'] = jid
 adds['xmpp_connection_info'] = connection_info
 adds['xmpp_auth_info'] = auth_info
-adds['db_config'] = 'sqlite:///{}/db/database.sqlite'.format(wd)
-adds['db_echo'] = False
+adds['db_filename'] = org.wayround.utils.path.join(wd, 'db', 'database.zodb')
 adds['host'] = 'localhost'
 adds['port'] = 8084
 adds['main_admin'] = 'animus@wayround.org'
