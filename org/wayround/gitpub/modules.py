@@ -3,9 +3,13 @@ import collections
 import os.path
 
 
+import org.wayround.xmpp.core
+
 import sqlalchemy.orm.exc
 
 import org.wayround.softengine.rtenv
+
+GITPUB_MODULE_NAME = 'org_wayround_gitpub_modules_GitPub'
 
 
 class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
@@ -36,7 +40,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     def __init__(self, rtenv):
 
-        self.module_name = 'org_wayround_gitpub_modules_GitPub'
+        self.module_name = GITPUB_MODULE_NAME
 
         self.session_lifetime = 24 * 60 * 60
 
@@ -190,14 +194,13 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
             jid = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
-                nullable=True,
-                default=None
+                nullable=False
                 )
 
             role = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
                 nullable=False,
-                default='read'
+                default='guest'
                 )
 
         class RepositoryRole(self.rtenv.db.db_base):
@@ -222,14 +225,13 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
             jid = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
-                nullable=True,
-                default=None
+                nullable=False,
                 )
 
             role = sqlalchemy.Column(
                 sqlalchemy.UnicodeText,
-                nullable=True,
-                default=None
+                nullable=False,
+                default='guest'
                 )
 
         class PublicKey(self.rtenv.db.db_base):
@@ -307,6 +309,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     def set_site_setting(self, name, value, _assume_absent=False):
 
+        home = org.wayround.xmpp.core.jid_to_bare(home)
+
         if name not in self.ACCEPTABLE_SITE_SETTINGS:
             raise ValueError("invalid `name'")
 
@@ -337,6 +341,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     def get_home_setting(self, home, name):
 
+        home = org.wayround.xmpp.core.jid_to_bare(home)
+
         if name not in self.ACCEPTABLE_HOME_SETTINGS:
             raise ValueError("invalid `name'")
 
@@ -364,6 +370,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return ret
 
     def set_home_setting(self, home, name, value, _assume_absent=False):
+
+        home = org.wayround.xmpp.core.jid_to_bare(home)
 
         if name not in self.ACCEPTABLE_HOME_SETTINGS:
             raise ValueError("invalid `name'")
@@ -396,6 +404,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     def get_repo_setting(self, home, repo, name):
 
+        home = org.wayround.xmpp.core.jid_to_bare(home)
+
         if name not in self.ACCEPTABLE_REPO_SETTINGS:
             raise ValueError("invalid `name'")
 
@@ -424,6 +434,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return ret
 
     def set_repo_setting(self, home, repo, name, value, _assume_absent=False):
+
+        home = org.wayround.xmpp.core.jid_to_bare(home)
 
         if name not in self.ACCEPTABLE_REPO_SETTINGS:
             raise ValueError("invalid `name'")
@@ -474,6 +486,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     def get_site_role(self, jid):
 
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
+
         ret = 'guest'
 
         try:
@@ -494,6 +508,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return ret
 
     def set_site_role(self, jid, role):
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
 
         if not role in ['admin', 'user', 'guest', 'blocked']:
             raise ValueError("invalid `role' value")
@@ -546,10 +561,12 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return
 
     def del_site_role(self, jid):
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
         self.set_site_role(jid, 'guest')
         return
 
     def dict_home_roles(self, home):
+        home = org.wayround.xmpp.core.jid_to_bare(home)
 
         ret = {}
 
@@ -567,6 +584,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return ret
 
     def get_home_role(self, home, jid):
+        home = org.wayround.xmpp.core.jid_to_bare(home)
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
 
         ret = 'guest'
 
@@ -592,6 +611,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return ret
 
     def set_home_role(self, home, jid, role):
+        home = org.wayround.xmpp.core.jid_to_bare(home)
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
 
         if not role in ['user', 'guest', 'blocked']:
             raise ValueError("invalid `role' value")
@@ -644,10 +665,13 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return
 
     def del_home_role(self, home, jid):
+        home = org.wayround.xmpp.core.jid_to_bare(home)
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
         self.set_home_role(home, jid, 'guest')
         return
 
     def dict_repo_roles(self, home, repo):
+        home = org.wayround.xmpp.core.jid_to_bare(home)
 
         ret = {}
 
@@ -668,6 +692,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return ret
 
     def get_repo_role(self, home, repo, jid):
+        home = org.wayround.xmpp.core.jid_to_bare(home)
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
 
         ret = 'guest'
 
@@ -697,6 +723,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             return ret
 
     def set_repo_role(self, home, repo, jid, role):
+        home = org.wayround.xmpp.core.jid_to_bare(home)
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
 
         if not role in ['user', 'guest', 'blocked']:
             raise ValueError("invalid `role' value")
@@ -758,11 +786,17 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return
 
     def del_repo_role(self, home, repo, jid):
+        home = org.wayround.xmpp.core.jid_to_bare(home)
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
         self.set_repo_role(home, repo, jid, 'guest')
         return
 
     def get_public_key(self, jid):
+
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
+
         ret = None
+
         try:
             res = self.rtenv.db.sess.query(
                 self.rtenv.models[self.module_name]['PublicKey']
@@ -771,9 +805,12 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             pass
         else:
             ret = res
+
         return ret
 
     def user_is_has_public_key(self, jid):
+
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
 
         ret = False
 
@@ -785,6 +822,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return ret
 
     def is_correct_public_key_data(self, jid):
+
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
 
         ret = False
 
@@ -813,6 +852,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     def set_public_key(self, jid, msg):
 
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
+
         if self.user_is_has_public_key(jid):
             self.del_public_key(jid)
 
@@ -827,7 +868,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
             pk.msg = msg
             pk.msg_type_part = parsed_msg[0]
             pk.msg_base64_part = parsed_msg[1]
-            pk.msg_jid_part = parsed_msg[2]
+            pk.msg_jid_part = parsed_msg[2].lower()
 
             self.rtenv.db.sess.add(pk)
 
@@ -839,7 +880,11 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return ret
 
     def del_public_key(self, jid):
+
+        jid = org.wayround.xmpp.core.jid_to_bare(jid)
+
         ret = 0
+
         pk = self.get_public_key(jid)
 
         if pk is None:
@@ -862,15 +907,36 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         ret = set()
 
         for i in res:
-            ret.add(i.jid)
+            ret.add(org.wayround.xmpp.core.jid_to_bare(jidi.jid))
 
         return sorted(list(ret))
+
+    def del_home_and_user(self, home):
+
+        home = org.wayround.xmpp.core.jid_to_bare(home)
+
+        self.rtenv.db.sess.query(
+            self.rtenv.models[self.module_name]['HomeSetting']
+            ).filter_by(home=home).delete()
+
+        self.rtenv.db.sess.query(
+            self.rtenv.models[self.module_name]['RepositorySetting']
+            ).filter_by(home=home).delete()
+
+        self.del_site_role(home)
+
+        return
 
 
 def _value_to_bool(value):
     if isinstance(value, str):
         value = value.lower()
 
-    ret = value in [True, 1, '1', 'yes', 'true', 'ok', 'y']
+    ret = False
+
+    if isinstance(value, int):
+        ret = value != 0
+    else:
+        ret = value in [True, 1, '1', 'yes', 'true', 'ok', 'y']
 
     return ret

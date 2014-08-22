@@ -37,6 +37,39 @@ class Controller:
     def set_rtenv(self, rtenv):
         self.rtenv = rtenv
         return
+        
+    def unregister(
+            self,
+            actor_jid,
+            target_jid,
+            messages
+            ):
+            
+        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
+        target_jid = org.wayround.xmpp.core.jid_to_bare(target_jid)
+
+        actor_jid_role = self.get_role(actor_jid, actor_jid)
+
+        error = False
+
+        if actor_jid_role != 'admin':
+            if actor_jid != target_jid:
+                messages.append(
+                    {'type': 'error',
+                     'text':
+                        "You are not admin and not allowed"
+                        " to ungegister anybody except yourself"
+                        }
+                    )
+                error = True
+                
+        if not error:
+        
+            self._ssh_git_host.home_delete(target_jid)
+            
+            self.rtenv.modules[self.ttm].del_home_and_user(target_jid)
+            
+        return int(error)
 
     def register(
             self,
@@ -122,16 +155,16 @@ class Controller:
                 else:
 
                     if ((actor_jid_role == 'admin')
-                                or
-                                (actor_jid_role == 'guest'
-                                 and self.self.get_setting(
-                                     self.admin_jid,
-                                     None,
-                                     None,
-                                     'guest_can_register_self'
-                                     )
+                            or
+                            (actor_jid_role == 'guest'
+                             and self.self.get_setting(
+                                 self.admin_jid,
+                                 None,
+                                 None,
+                                 'guest_can_register_self'
                                  )
-                            ):
+                             )
+                        ):
 
                         try:
                             self.rtenv.modules[self.ttm].\
@@ -265,36 +298,40 @@ class Controller:
 
             else:
 
-                if home_level == repo_level is None:
+                if not self._ssh_git_host.home_is_exists(subject_jid):
+                    ret = 'guest'
+                else:
 
-                    ret = subject_jid_site_role
+                    if home_level == repo_level is None:
 
-                elif home_level is not None and repo_level is None:
+                        ret = subject_jid_site_role
 
-                    ret = self.rtenv.modules[self.ttm].get_home_role(
-                        home_level,
-                        subject_jid
-                        )
+                    elif home_level is not None and repo_level is None:
 
-                elif home_level is not None and repo_level is not None:
-
-                    subject_jid_home_role = \
-                        self.rtenv.modules[self.ttm].get_home_role(
-                            home_level, subject_jid
+                        ret = self.rtenv.modules[self.ttm].get_home_role(
+                            home_level,
+                            subject_jid
                             )
 
-                    if subject_jid_home_role == 'admin':
+                    elif home_level is not None and repo_level is not None:
 
-                        ret = 'admin'
+                        subject_jid_home_role = \
+                            self.rtenv.modules[self.ttm].get_home_role(
+                                home_level, subject_jid
+                                )
+
+                        if subject_jid_home_role == 'admin':
+
+                            ret = 'admin'
+
+                        else:
+
+                            ret = self.rtenv.modules[self.ttm].get_repo_role(
+                                subject_jid, repo_level
+                                )
 
                     else:
-
-                        ret = self.rtenv.modules[self.ttm].get_repo_role(
-                            subject_jid, repo_level
-                            )
-
-                else:
-                    ret = 'guest'
+                        ret = 'guest'
 
         return ret
 
@@ -942,6 +979,48 @@ class Controller:
                      'text':
                         "Error setting key. Is there some wrong data supplied"}
                     )
+
+        if error:
+            ret = 1
+
+        return ret
+
+    def get_key(
+            self,
+            actor_jid,
+            target_jid,
+            messages
+            ):
+
+        ret = 0
+
+        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
+        target_jid = org.wayround.xmpp.core.jid_to_bare(target_jid)
+
+        actor_role = self.get_role(actor_jid, actor_jid)
+
+        error = False
+
+        if actor_jid != target_jid:
+            if actor_role != 'admin':
+                messages.append(
+                    {'type': 'error',
+                     'text': "Only admin allowed to get keys for other users"}
+                    )
+                error = True
+
+        if not error:
+            ret = self.rtenv.modules[self.ttm].get_public_key(target_jid)
+
+            if not isinstance(ret, self.rtenv.models[self.ttm]['PublicKey']):
+                messages.append(
+                    {'type': 'error',
+                     'text':
+                        "Error getting key."}
+                    )
+                ret = 2
+            else:
+                ret = ret.msg
 
         if error:
             ret = 1

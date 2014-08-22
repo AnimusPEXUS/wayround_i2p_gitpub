@@ -27,6 +27,7 @@ class JabberCommands:
                 ('register', self.register),
                 ('stat', self.stat),
                 ('set-key', self.set_key),
+                ('get-key', self.get_key),
                 ('set-role', self.set_role),
                 ('ls', self.ls)
                 ]
@@ -177,7 +178,7 @@ permissions: {}
 
         whis working following way (example):
 
-        site set_key
+        site set_key [-j=JID]
         ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC6nTLCVTT49cG0U3ELLoXq0bWAaZpiyE2
         7isZaH5ULNl8BpXxUSj/zr0Wt4Rr7g9ZBXvcXjyQvhr+mZgmdH+6f3C3R3TjIFFUEY2St9O
         BzEho6t53ycA+ubAS47cYhXIKTwtFVSDYq7o5B0ORojnsd78N7rdsV7YRwcUQy3JiEXXcJv
@@ -214,6 +215,54 @@ permissions: {}
                 full_message_text,
                 messages
                 )
+
+        if error:
+            ret = 1
+
+        return ret
+
+    def get_key(self, comm, opts, args, adds):
+        """
+        Print Your public key
+
+        -j=JID    -  select who's key to get (this is for admin only)
+
+        whis working following way (example):
+
+        site get_key [-j=JID]
+        """
+
+        if not self._controller:
+            raise ValueError("use set_controller() method")
+
+        ret = 0
+        asker_jid = adds['asker_jid']
+        stanza = adds['stanza']
+        messages = adds['messages']
+
+        roles = self._controller.get_role(asker_jid, asker_jid)
+
+        error = False
+
+        target_jid = asker_jid
+        if '-j' in opts:
+            target_jid = opts['-j']
+
+        if not error:
+            res = self._controller.get_key(
+                asker_jid,
+                target_jid,
+                messages
+                )
+            if not isinstance(res, str):
+                ret = 2
+            else:
+                messages.append(
+                    {
+                        'type': 'text',
+                        'text': res
+                    }
+                    )
 
         if error:
             ret = 1
