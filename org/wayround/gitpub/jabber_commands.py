@@ -178,7 +178,7 @@ permissions: {}
 
         whis working following way (example):
 
-        site set_key [-j=JID]
+        set-key [-j=JID]
         ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC6nTLCVTT49cG0U3ELLoXq0bWAaZpiyE2
         7isZaH5ULNl8BpXxUSj/zr0Wt4Rr7g9ZBXvcXjyQvhr+mZgmdH+6f3C3R3TjIFFUEY2St9O
         BzEho6t53ycA+ubAS47cYhXIKTwtFVSDYq7o5B0ORojnsd78N7rdsV7YRwcUQy3JiEXXcJv
@@ -186,7 +186,8 @@ permissions: {}
         PI/mAXo08CRzcxc0tNP5pxKx8gXSVy3weeUu4laqO8Hko6xWFZlNrkwMpC/brItphIAuuQm
         kgbv4rSfy7k5GpV97G/vzVjCZ animus@wayround.org
 
-        where text after 'site set_key' is copy/paste from Your .ssh/*.pub key
+        where text below line with 'set-key' is copy/paste from Your .ssh/*.pub
+        key
         """
 
         if not self._controller:

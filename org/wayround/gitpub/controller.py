@@ -1012,7 +1012,7 @@ class Controller:
         if not error:
             ret = self.rtenv.modules[self.ttm].get_public_key(target_jid)
 
-            if not isinstance(ret, self.rtenv.models[self.ttm]['PublicKey']):
+            if not isinstance(ret, dict):
                 messages.append(
                     {'type': 'error',
                      'text':
@@ -1020,7 +1020,7 @@ class Controller:
                     )
                 ret = 2
             else:
-                ret = ret.msg
+                ret = ret['msg']
 
         if error:
             ret = 1

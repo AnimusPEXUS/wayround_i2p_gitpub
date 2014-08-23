@@ -28,7 +28,6 @@ def site_start(comm, opts, args, adds):
     ret = 0
 
     db_filename = adds['db_filename']
-    db_echo = adds['db_echo']
     host = adds['host']
     port = adds['port']
     main_admin = adds['main_admin']
@@ -50,8 +49,6 @@ def site_start(comm, opts, args, adds):
     exit_event = threading.Event()
 
     rtenv.init()
-
-    rtenv.db.create_all()
 
     commands = org.wayround.gitpub.jabber_commands.JabberCommands()
 
