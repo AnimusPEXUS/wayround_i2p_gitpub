@@ -106,14 +106,14 @@ def site_start(comm, opts, args, adds):
 
     exit_event.set()
 
-    logging.debug("starting ssh stop")
+    print("starting ssh stop")
     ssh_git_host.stop()
-    logging.debug("starting bot stop")
+    print("starting bot stop")
     bot.disconnect()
-    #logging.debug("starting environ stop")
-    #environ.stop()
-    logging.debug("all things stopped")
+    # print("starting environ stop")
+    # environ.stop()
+    print("all things stopped")
 
-    logging.debug("MainThread exiting")
+    print("MainThread exiting")
 
     return ret

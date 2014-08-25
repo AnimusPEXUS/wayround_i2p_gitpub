@@ -30,21 +30,24 @@ class Controller:
     def set_ssh_git_host(self, ssh_git_host):
         self._ssh_git_host = ssh_git_host
         self._ssh_git_host.set_callbacks(
-            {'check_key': self.check_key}
+            {'check_key': self.check_key,
+             'check_permission': self.check_permission_exported
+             }
+
             )
         return
 
     def set_rtenv(self, rtenv):
         self.rtenv = rtenv
         return
-        
+
     def unregister(
             self,
             actor_jid,
             target_jid,
             messages
             ):
-            
+
         actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
         target_jid = org.wayround.xmpp.core.jid_to_bare(target_jid)
 
@@ -59,16 +62,16 @@ class Controller:
                      'text':
                         "You are not admin and not allowed"
                         " to ungegister anybody except yourself"
-                        }
+                     }
                     )
                 error = True
-                
+
         if not error:
-        
+
             self._ssh_git_host.home_delete(target_jid)
-            
+
             self.rtenv.modules[self.ttm].del_home_and_user(target_jid)
-            
+
         return int(error)
 
     def register(
@@ -157,11 +160,12 @@ class Controller:
                     if ((actor_jid_role == 'admin')
                             or
                             (actor_jid_role == 'guest'
-                             and self.self.get_setting(
+                             and self.get_setting(
                                  self.admin_jid,
                                  None,
                                  None,
-                                 'guest_can_register_self'
+                                 'guest_can_register_self',
+                                         messages
                                  )
                              )
                         ):
@@ -327,7 +331,7 @@ class Controller:
                         else:
 
                             ret = self.rtenv.modules[self.ttm].get_repo_role(
-                                subject_jid, repo_level
+                                home_level, repo_level, subject_jid
                                 )
 
                     else:
@@ -719,6 +723,23 @@ class Controller:
 
         return ret
 
+    def check_permission_exported(
+            self,
+            subject_jid,
+            what,
+            home_level=None,
+            repo_level=None
+            ):
+        messages = []
+        return self.check_permission(
+            self.admin_jid,
+            subject_jid,
+            what,
+            home_level,
+            repo_level,
+            messages
+            )
+
     def check_permission(
             self,
             actor_jid,
@@ -736,6 +757,9 @@ class Controller:
 
         if what not in ['can_read', 'can_write']:
             raise ValueError("invalid `what' value")
+
+        if messages is None:
+            raise ValueError("`messages' must be defined")
 
         ret = False
 
@@ -905,7 +929,7 @@ class Controller:
                 ret = self._ssh_git_host.home_list()
 
             else:
-                ret = self._ssh_git_host.repo_list(home_level)
+                ret = self._ssh_git_host.repository_list(home_level)
 
         return ret
 
@@ -926,7 +950,7 @@ class Controller:
 
             type_ = 'ssh-rsa'
 
-            res = self.rtenv.modules[self.ttm].username_get_by_base64(
+            res = self.rtenv.modules[self.ttm].get_jid_by_base64(
                 type_,
                 b64
                 )
@@ -1121,7 +1145,7 @@ class Controller:
                 if name is not None:
                     ret = self.rtenv.modules[self.ttm].get_site_setting(
                         name
-                        ).value
+                        )
                 else:
                     ret = collections.OrderedDict()
                     for i in self.rtenv.modules[self.ttm].\
@@ -1153,7 +1177,7 @@ class Controller:
                     ret = self.rtenv.modules[self.ttm].get_home_setting(
                         home_level,
                         name
-                        ).value
+                        )
                 else:
                     ret = collections.OrderedDict()
                     for i in self.rtenv.modules[self.ttm].\
@@ -1186,7 +1210,7 @@ class Controller:
                         home_level,
                         repo_level,
                         name
-                        ).value
+                        )
                 else:
                     ret = collections.OrderedDict()
                     for i in self.rtenv.modules[self.ttm].\

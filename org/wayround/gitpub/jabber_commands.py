@@ -313,11 +313,19 @@ permissions: {}
                 messages.append(
                     {
                         'type': 'text',
-                        'text': repr(res)
+                        'text': ' '.join(sorted(res))
                         }
                     )
 
             else:
+                messages.append(
+                    {
+                        'type': 'error',
+                        'text':
+                            "Error getting list of"
+                            " repositories in home `{}'".format(home_level)
+                        }
+                    )
                 ret = 2
 
         else:
@@ -462,16 +470,7 @@ permissions: {}
                 ret = 3
             else:
 
-                if ret:
-                    messages.append(
-                        {
-                            'type': 'text',
-                            'text': "{}".format(ret)
-                            }
-                        )
-                    ret = 0
-
-                else:
+                if ret != 0:
                     messages.append(
                         {
                             'type': 'error',

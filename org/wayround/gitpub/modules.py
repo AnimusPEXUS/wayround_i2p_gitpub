@@ -8,6 +8,7 @@ import persistent.list
 import transaction
 
 import org.wayround.xmpp.core
+import org.wayround.utils.types
 
 import org.wayround.softengine.rtenv
 
@@ -134,10 +135,11 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     def set_site_setting(self, name, value):
 
-        home = org.wayround.xmpp.core.jid_to_bare(home)
-
         if name not in self.ACCEPTABLE_SITE_SETTINGS:
             raise ValueError("invalid `name'")
+
+        if isinstance(self.ACCEPTABLE_SITE_SETTINGS[name], bool):
+            value = org.wayround.utils.types.value_to_bool(value)
 
         if not isinstance(value, type(self.ACCEPTABLE_SITE_SETTINGS[name])):
             raise TypeError(
@@ -181,6 +183,9 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
         if name not in self.ACCEPTABLE_HOME_SETTINGS:
             raise ValueError("invalid `name'")
+
+        if isinstance(self.ACCEPTABLE_HOME_SETTINGS[name], bool):
+            value = org.wayround.utils.types.value_to_bool(value)
 
         if not isinstance(value, type(self.ACCEPTABLE_HOME_SETTINGS[name])):
             raise TypeError(
@@ -230,12 +235,15 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
         return ret
 
-    def set_repo_setting(self, home, repo, name, value, _assume_absent=False):
+    def set_repo_setting(self, home, repo, name, value):
 
         home = org.wayround.xmpp.core.jid_to_bare(home)
 
         if name not in self.ACCEPTABLE_HOME_SETTINGS:
             raise ValueError("invalid `name'")
+
+        if isinstance(self.ACCEPTABLE_REPO_SETTINGS[name], bool):
+            value = org.wayround.utils.types.value_to_bool(value)
 
         if not isinstance(value, type(self.ACCEPTABLE_HOME_SETTINGS[name])):
             raise TypeError(
@@ -376,7 +384,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
         else:
 
-            con_root.org_wayround_gitpub_home_roles[home][jid] = value
+            con_root.org_wayround_gitpub_home_roles[home][jid] = role
 
         transaction.commit()
         db_con.close()
@@ -461,7 +469,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
         else:
 
-            con_root.org_wayround_gitpub_repo_roles[home][repo][jid] = value
+            con_root.org_wayround_gitpub_repo_roles[home][repo][jid] = role
 
         transaction.commit()
         db_con.close()
@@ -584,7 +592,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
         ret = set()
 
-        for k, v in con_root.org_wayround_gitpub_public_keys:
+        for k, v in con_root.org_wayround_gitpub_public_keys.items():
             if v['msg_type_part'] == type_:
                 if b64_1 == ''.join(v['msg_base64_part'].splitlines()):
                     ret.add(org.wayround.xmpp.core.jid_to_bare(k))
@@ -601,17 +609,17 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
-        if jid in db_root.org_wayround_gitpub_home_settings:
-            del db_root.org_wayround_gitpub_home_settings[jid]
+        if jid in con_root.org_wayround_gitpub_home_settings:
+            del con_root.org_wayround_gitpub_home_settings[jid]
 
-        if jid in db_root.org_wayround_gitpub_repo_settings:
-            del db_root.org_wayround_gitpub_repo_settings[jid]
+        if jid in con_root.org_wayround_gitpub_repo_settings:
+            del con_root.org_wayround_gitpub_repo_settings[jid]
 
-        if jid in db_root.org_wayround_gitpub_home_roles:
-            del db_root.org_wayround_gitpub_home_roles[jid]
+        if jid in con_root.org_wayround_gitpub_home_roles:
+            del con_root.org_wayround_gitpub_home_roles[jid]
 
-        if jid in db_root.org_wayround_gitpub_repo_roles:
-            del db_root.org_wayround_gitpub_repo_roles[jid]
+        if jid in con_root.org_wayround_gitpub_repo_roles:
+            del con_root.org_wayround_gitpub_repo_roles[jid]
 
         self.del_site_role(jid)
 
@@ -621,25 +629,9 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         return
 
 
-def _value_to_bool(value):
-    if isinstance(value, str):
-        value = value.lower()
-
-    ret = False
-
-    if isinstance(value, int):
-        ret = value != 0
-    else:
-        ret = value in [True, 1, '1', 'yes', 'true', 'ok', 'y']
-
-    return ret
-
-
 def is_correct_public_key_data(msg, jid):
 
     jid = org.wayround.xmpp.core.jid_to_bare(jid)
-
-    ret = False
 
     pkey = msg
 
