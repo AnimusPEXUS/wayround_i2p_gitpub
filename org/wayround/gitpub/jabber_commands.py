@@ -1,5 +1,7 @@
 
 import collections
+import logging
+import pprint
 
 import org.wayround.xmpp.core
 import org.wayround.gitpub.modules
@@ -455,7 +457,7 @@ permissions: {}
         if ret == 0:
 
             try:
-                ret = self._controller.set_setting_by_path(
+                res = self._controller.set_setting_by_path(
                     asker_jid,
                     path,
                     name,
@@ -463,6 +465,7 @@ permissions: {}
                     messages
                     )
             except Exception as e:
+                logging.exception("error")
                 messages.append(
                     {'type': 'error',
                      'text': e.args[0]}
@@ -470,14 +473,19 @@ permissions: {}
                 ret = 3
             else:
 
-                if ret != 0:
+                if res == 1:
                     messages.append(
                         {
                             'type': 'error',
-                            'text': "Error returned: {}".format(ret)
+                            'text': "Error returned: {}".format(res)
                             }
                         )
                     ret = 4
+                else:
+                    messages.append(
+                        {'type': 'text',
+                         'text': pprint.pformat(res)}
+                        )
 
         return ret
 

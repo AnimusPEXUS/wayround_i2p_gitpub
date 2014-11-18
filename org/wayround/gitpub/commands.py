@@ -15,11 +15,7 @@ import org.wayround.sshgithost.sshgithost
 
 def commands():
     return dict(
-        site=dict(
-            start=site_start
-            ),
-        help=dict(
-            )
+        start=site_start
         )
 
 
