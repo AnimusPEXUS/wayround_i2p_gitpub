@@ -27,7 +27,7 @@ class JabberCommands:
             [
                 ('set', self.set_set),
                 ('register', self.register),
-                ('stat', self.stat),
+                ('status', self.stat),
                 ('set-key', self.set_key),
                 ('get-key', self.get_key),
                 ('set-role', self.set_role),
@@ -37,7 +37,7 @@ class JabberCommands:
 
     def stat(self, comm, opts, args, adds):
         """
-        Get status for You or some JID one site, home or repository
+        Get status for You or some one JID on site, home or repository
         (using path)
 
         [-j=user] [path]
@@ -87,7 +87,7 @@ class JabberCommands:
             error = True
 
         if not error:
-            res = self._controller.status(
+            res = self._controller.status_by_path(
                 asker_jid,
                 jid_to_know,
                 path,
@@ -274,7 +274,7 @@ permissions: {}
 
     def ls(self, comm, opts, args, adds):
         """
-        List homes or repositories in home
+        List homes on site or repositories in home
         """
 
         if not self._controller:
@@ -287,12 +287,20 @@ permissions: {}
 
         error = False
 
-        home_level = None
+        path = None
+        
         len_args = len(args)
+        
         if len_args == 0:
-            pass
+            messages.append(
+                {
+                    'type': 'error',
+                    'text': "Path must be supplied"
+                    }
+                )
+            error = True
         elif len_args == 1:
-            home_level = args[0]
+            path = args[0]
         else:
             messages.append(
                 {
@@ -304,10 +312,10 @@ permissions: {}
 
         if not error:
 
-            res = self._controller.list(
+            res = self._controller.lst_by_path(
                 asker_jid,
                 asker_jid,
-                home_level=home_level,
+                path=path,
                 messages=messages
                 )
 
@@ -325,7 +333,7 @@ permissions: {}
                         'type': 'error',
                         'text':
                             "Error getting list of"
-                            " repositories in home `{}'".format(home_level)
+                            " repositories in home `{}'".format(path)
                         }
                     )
                 ret = 2

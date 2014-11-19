@@ -158,16 +158,16 @@ class Controller:
                 else:
 
                     if ((actor_jid_role == 'admin')
-                            or
-                            (actor_jid_role == 'guest'
-                             and self.get_setting(
-                                 self.admin_jid,
-                                 None,
-                                 None,
-                                 'guest_can_register_self',
-                                         messages
+                        or
+                        (actor_jid_role == 'guest'
+                                 and self.get_setting(
+                                     self.admin_jid,
+                                     None,
+                                     None,
+                                     'guest_can_register_self',
+                                     messages
+                                     )
                                  )
-                             )
                         ):
 
                         try:
@@ -200,6 +200,31 @@ class Controller:
         return int(error)
 
     def status(
+            self,
+            actor_jid,
+            home_level=None,
+            repo_level=None,
+            rest=None,
+            messages=None
+            ):
+
+        path = org.wayround.sshgithost.sshgithost.join_levels(
+            home_level,
+            repo_level,
+            rest
+            )
+
+        if ret == 0:
+            ret = self.status_by_path(
+                actor_jid,
+                subject_jid,
+                path,
+                messages
+                )
+
+        return ret
+
+    def status_by_path(
             self,
             actor_jid,
             jid_to_know=None,
@@ -894,7 +919,41 @@ class Controller:
 
         return ret
 
-    def list(
+    def lst_by_path(
+            self,
+            actor_jid,
+            subject_jid,
+            path,
+            messages=None
+            ):
+
+        home_level, repo_level, rest = \
+            org.wayround.sshgithost.sshgithost.get_levels('/', path)
+
+        ret = 0
+
+        if repo_level is not None or rest is not None:
+            messages.append(
+                {
+                    'type': 'error',
+                    'text':
+                        "'repo_level' or 'rest' parts of path are"
+                        " not allowed for this command"
+                    }
+                )
+            ret = 1
+
+        if ret == 0:
+            ret = self.lst(
+                actor_jid,
+                subject_jid,
+                home_level,
+                messages
+                )
+
+        return ret
+
+    def lst(
             self,
             actor_jid,
             subject_jid,

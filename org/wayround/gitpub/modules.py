@@ -18,7 +18,7 @@ GITPUB_MODULE_NAME = 'org_wayround_gitpub_modules_GitPub'
 class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
     ACCEPTABLE_SITE_SETTINGS = collections.OrderedDict([
-        ('site_title', "No title"),
+        ('title', "No title"),
         ('guest_can_list_homes', False),
         ('guest_can_register_self', False)
         ])
@@ -48,7 +48,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         self.session_lifetime = 24 * 60 * 60
 
         self.site_roles = [
-            'admin', 'user', 'guest', 'blocked'
+            'owner', 'user', 'guest', 'blocked'
             ]
 
         self.home_roles = [
@@ -216,7 +216,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
-        ret = self.ACCEPTABLE_HOME_SETTINGS[name]
+        ret = self.ACCEPTABLE_REPO_SETTINGS[name]
 
         if home in con_root.org_wayround_gitpub_repo_settings:
             if repo in con_root.org_wayround_gitpub_repo_settings[home]:
@@ -239,13 +239,13 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
 
         home = org.wayround.xmpp.core.jid_to_bare(home)
 
-        if name not in self.ACCEPTABLE_HOME_SETTINGS:
+        if name not in self.ACCEPTABLE_REPO_SETTINGS:
             raise ValueError("invalid `name'")
 
         if isinstance(self.ACCEPTABLE_REPO_SETTINGS[name], bool):
             value = org.wayround.utils.types.value_to_bool(value)
 
-        if not isinstance(value, type(self.ACCEPTABLE_HOME_SETTINGS[name])):
+        if not isinstance(value, type(self.ACCEPTABLE_REPO_SETTINGS[name])):
             raise TypeError(
                 "invalid home setting `{}' value type".format(name)
                 )
