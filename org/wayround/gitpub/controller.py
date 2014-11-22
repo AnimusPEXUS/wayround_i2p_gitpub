@@ -10,10 +10,10 @@ class Controller:
 
     def __init__(
             self,
-            admin_jid='example@ex.nonexisting'
+            owner_jid='example@ex.nonexisting'
             ):
 
-        self.admin_jid = admin_jid
+        self.owner_jid = owner_jid
 
         self.ttm = 'org_wayround_gitpub_modules_GitPub'
 
@@ -55,12 +55,12 @@ class Controller:
 
         error = False
 
-        if actor_jid_role != 'admin':
+        if actor_jid_role != 'owner':
             if actor_jid != target_jid:
                 messages.append(
                     {'type': 'error',
                      'text':
-                        "You are not admin and not allowed"
+                        "You are not owner and not allowed"
                         " to ungegister anybody except yourself"
                      }
                     )
@@ -95,12 +95,12 @@ class Controller:
 
         error = False
 
-        if actor_jid_role != 'admin':
+        if actor_jid_role != 'owner':
             if target_role != 'user':
                 messages.append(
                     {'type': 'error',
                      'text':
-                        "You are not admin and can't select user target role"}
+                        "You are not owner and can't select user target role"}
                     )
                 error = True
 
@@ -108,7 +108,7 @@ class Controller:
                 messages.append(
                     {'type': 'error',
                      'text':
-                        "You are not admin and can't select target user jid"}
+                        "You are not owner and can't select target user jid"}
                     )
                 error = True
 
@@ -157,11 +157,11 @@ class Controller:
 
                 else:
 
-                    if ((actor_jid_role == 'admin')
+                    if ((actor_jid_role == 'owner')
                         or
                         (actor_jid_role == 'guest'
                                  and self.get_setting(
-                                     self.admin_jid,
+                                     self.owner_jid,
                                      None,
                                      None,
                                      'guest_can_register_self',
@@ -247,11 +247,11 @@ class Controller:
 
         error = False
 
-        if actor_role != 'admin':
+        if actor_role != 'owner':
             if jid_to_know != actor_jid:
                 messages.append(
                     {'type': 'error',
-                     'text': "You are not admin, and can't select JID to know"
+                     'text': "You are not owner, and can't select JID to know"
                      }
                     )
                 error = True
@@ -314,16 +314,16 @@ class Controller:
 
         ret = 'guest'
 
-        if self.admin_jid == subject_jid:
-            ret = 'admin'
+        if self.owner_jid == subject_jid:
+            ret = 'owner'
 
         else:
 
             subject_jid_site_role = \
                 self.rtenv.modules[self.ttm].get_site_role(subject_jid)
 
-            if subject_jid_site_role == 'admin':
-                ret = 'admin'
+            if subject_jid_site_role == 'owner':
+                ret = 'owner'
 
             else:
 
@@ -349,9 +349,9 @@ class Controller:
                                 home_level, subject_jid
                                 )
 
-                        if subject_jid_home_role == 'admin':
+                        if subject_jid_home_role == 'owner':
 
-                            ret = 'admin'
+                            ret = 'owner'
 
                         else:
 
@@ -407,16 +407,16 @@ class Controller:
 
         actor_role = self.get_role(actor_jid, actor_jid)
 
-        # admin can edit any roles everythere
-        if actor_role != 'admin':
+        # owner can edit any roles everythere
+        if actor_role != 'owner':
 
-            # non-admin actor can edit only own home or repo
+            # non-owner actor can edit only own home or repo
             if home_level != actor_jid:
 
                 messages.append(
                     {
                         'type': 'error',
-                        'text': "You are not admin - not allowed"
+                        'text': "You are not owner - not allowed"
                     }
                     )
                 error = True
@@ -556,7 +556,7 @@ class Controller:
             # if guest or blocked
 
             if self.get_setting(
-                    self.admin_jid,
+                    self.owner_jid,
                     None,
                     None,
                     'guest_can_list_homes',
@@ -580,7 +580,7 @@ class Controller:
                     )
 
         else:
-            # simple users and admins are allowed
+            # simple users and owner are allowed
             ret = True
 
         return ret
@@ -637,7 +637,7 @@ class Controller:
                 # if guest or blocked - can if guests allowed
 
                 if self.get_setting(
-                        self.admin_jid,
+                        self.owner_jid,
                         home_level,
                         None,
                         'guest_can_list_repos',
@@ -660,7 +660,7 @@ class Controller:
             elif subject_jid_home_role == 'user':
                 # only users left. they can view
                 if self.get_setting(
-                        self.admin_jid,
+                        self.owner_jid,
                         home_level,
                         None,
                         'user_can_list_repos',
@@ -714,7 +714,7 @@ class Controller:
                 # if guest or blocked - can if guests allowed
 
                 if self.get_setting(
-                        self.admin_jid,
+                        self.owner_jid,
                         home_level,
                         repo_level,
                         'guest_can_read',
@@ -736,7 +736,7 @@ class Controller:
                         )
             elif subject_jid_repo_role == 'user':
                 if self.get_setting(
-                        self.admin_jid,
+                        self.owner_jid,
                         home_level,
                         repo_level,
                         'user_can_read',
@@ -757,7 +757,7 @@ class Controller:
             ):
         messages = []
         return self.check_permission(
-            self.admin_jid,
+            self.owner_jid,
             subject_jid,
             what,
             home_level,
@@ -793,7 +793,7 @@ class Controller:
             subject_jid
             )
 
-        if subject_jid_site_role == 'admin' or self.admin_jid == subject_jid:
+        if subject_jid_site_role == 'owner' or self.owner_jid == subject_jid:
             ret = True
 
         else:
@@ -840,7 +840,7 @@ class Controller:
 
                 if home_level is None and repo_level is None:
 
-                    if self.get_role(actor_jid, subject_jid) == 'admin':
+                    if self.get_role(actor_jid, subject_jid) == 'owner':
                         ret = True
                     else:
                         # nobody can write to root. registration - is
@@ -889,7 +889,7 @@ class Controller:
 
                         elif subject_jid_repo_role == 'user':
                             if self.get_setting(
-                                    self.admin_jid,
+                                    self.owner_jid,
                                     home_level,
                                     repo_level,
                                     'user_can_write',
@@ -899,7 +899,7 @@ class Controller:
 
                         elif subject_jid_repo_role == 'guest':
                             if self.get_setting(
-                                    self.admin_jid,
+                                    self.owner_jid,
                                     home_level,
                                     repo_level,
                                     'guest_can_write',
@@ -1043,10 +1043,10 @@ class Controller:
         msg = ''.join(msg_msg_lines[1:])
 
         if actor_jid != target_jid:
-            if actor_role != 'admin':
+            if actor_role != 'owner':
                 messages.append(
                     {'type': 'error',
-                     'text': "Only admin allowed to set keys for other users"}
+                     'text': "Only owner allowed to set keys for other users"}
                     )
                 error = True
 
@@ -1085,10 +1085,10 @@ class Controller:
         error = False
 
         if actor_jid != target_jid:
-            if actor_role != 'admin':
+            if actor_role != 'owner':
                 messages.append(
                     {'type': 'error',
-                     'text': "Only admin allowed to get keys for other users"}
+                     'text': "Only owner allowed to get keys for other users"}
                     )
                 error = True
 
@@ -1187,10 +1187,10 @@ class Controller:
 
         if home_level is None and repo_level is None:
             if value is not None:
-                if actor_role != 'admin':
+                if actor_role != 'owner':
                     messages.append(
                         {'type': 'error',
-                         'text': "Only admin allowed to change site settings"}
+                         'text': "Only owner allowed to change site settings"}
                         )
                     error = True
 

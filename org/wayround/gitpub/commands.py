@@ -26,7 +26,7 @@ def site_start(comm, opts, args, adds):
     db_filename = adds['db_filename']
     host = adds['host']
     port = adds['port']
-    main_admin = adds['main_admin']
+    main_owner = adds['main_owner']
     ssh_working_root_dir = adds['ssh_working_root_dir']
     ssh_host_address = adds['ssh_host_address']
     ssh_host_port = adds['ssh_host_port']
@@ -61,11 +61,11 @@ def site_start(comm, opts, args, adds):
     #    rtenv,
     #    host=host,
     #    port=port,
-    #    admin_jid=main_admin
+    #    owner_jid=main_owner
     #    )
         
     controller = org.wayround.gitpub.controller.Controller(
-        admin_jid=main_admin
+        owner_jid=main_owner
         )
     controller.set_bot(bot)
     controller.set_ssh_git_host(ssh_git_host)

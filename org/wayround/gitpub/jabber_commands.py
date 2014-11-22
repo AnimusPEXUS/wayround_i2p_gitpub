@@ -45,7 +45,7 @@ class JabberCommands:
         If `path' is not specified, then status on site is returned, else
         the status and access permission on path is returned.
 
-        Only admin can use -j parameter
+        Only owner can use -j parameter
         """
 
         if not self._controller:
@@ -116,10 +116,10 @@ permissions: {}
 
         [-r=role] [barejid]
 
-        Both option and argument can by used by admin only. Guests can register
+        Both option and argument can by used by owner only. Guests can register
         self only if this is permitted by configuration.
 
-        -r=role - role. one of 'admin', 'user', 'guest'
+        -r=role - role. one of 'owner', 'user', 'guest', 'blocked'
 
         barejid - user jid to register. leave empty to register self
         """
@@ -176,7 +176,7 @@ permissions: {}
         """
         Set Your public key
 
-        -j=JID    -  select for who set supplied key (this is for admin only)
+        -j=JID    -  select for who set supplied key (this is for owner only)
 
         whis working following way (example):
 
@@ -228,7 +228,7 @@ permissions: {}
         """
         Print Your public key
 
-        -j=JID    -  select who's key to get (this is for admin only)
+        -j=JID    -  select who's key to get (this is for owner only)
 
         whis working following way (example):
 
@@ -349,21 +349,21 @@ permissions: {}
 
         Usage: subject_jid path role
 
-        Only admin can change roles for entire site.
+        Only owner can change roles for entire site.
 
         Home owner can change other's roles for own home or repositories only.
 
-        Possible site roles are: ['admin', 'user', 'guest', 'blocked']
+        Possible site roles are: ['owner', 'user', 'guest', 'blocked']
         Possible home roles are: ['owner', 'user', 'guest', 'blocked']
         Possible repo roles are: ['owner', 'user', 'guest', 'blocked']
 
         BUT: role which can be passed to this function are:
 
-        Possible site roles are: ['admin', 'user', 'guest', 'blocked']
+        Possible site roles are: ['owner', 'user', 'guest', 'blocked']
         Possible home roles are: ['user', 'guest', 'blocked']
         Possible repo roles are: ['user', 'guest', 'blocked']
 
-        Keep in mind: site admin is allways has full access to everything on
+        Keep in mind: site owner is allways has full access to everything on
                       site
         """
 

@@ -300,7 +300,7 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
     def set_site_role(self, jid, role):
         jid = org.wayround.xmpp.core.jid_to_bare(jid)
 
-        if not role in ['admin', 'user', 'guest', 'blocked']:
+        if not role in ['owner', 'user', 'guest', 'blocked']:
             raise ValueError("invalid `role' value")
 
         db_con = self.rtenv.db.open()

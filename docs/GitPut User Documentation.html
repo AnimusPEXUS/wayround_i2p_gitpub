@@ -1,0 +1,209 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>GitPut User Documentation</title>
+  </head>
+  <body>
+    <h1>GitPub User Documentation</h1>
+    <ol class="readonly" id="mozToc">
+      <!--mozToc h2 1 h3 2-->
+      <li><a href="#mozTocId80458">Designation</a></li>
+      <li><a href="#mozTocId644945">Links</a></li>
+      <li><a href="#mozTocId827982">Features</a></li>
+      <li><a href="#mozTocId715038">GitPub Site Structure Graphic</a></li>
+      <li><a href="#mozTocId494053">Installation and Requirements </a></li>
+      <li><a href="#mozTocId468573">Understanding Permissions and Roles</a></li>
+      <li><a href="#mozTocId170836">Operations</a>
+        <ol>
+          <li><a href="#mozTocId545347">Getting Help from Site-bot</a></li>
+          <li><a href="#mozTocId292545">Registering on Site</a></li>
+          <li><a href="#mozTocId865849">Generating New Private/Public
+              key pair</a></li>
+          <li><a href="#mozTocId668645">Applying public key part to Your
+              home on GitPub site</a></li>
+          <li><a href="#mozTocId922690">Upload New Git Repository to
+              Host</a></li>
+          <li><a href="#mozTocId361439">Configuring 'remote' in Your Git
+              repository</a></li>
+        </ol>
+      </li>
+    </ol>
+    <h2><a class="mozTocH2" name="mozTocId80458"></a>Designation</h2>
+    <p>This software is for organizing Your own git+ssh host<br>
+    </p>
+    <h2><a class="mozTocH2" name="mozTocId644945"></a>Links</h2>
+    <ul>
+      <li>GitHub: probably it will be:
+        https://github.com/AnimusPEXUS/org_wayround_gitpub</li>
+      <li>You will need this too: https://github.com/AnimusPEXUS/org_wayround_sshgithost</li>
+    </ul>
+    <h2><a class="mozTocH2" name="mozTocId827982"></a>Features</h2>
+    <ul>
+      <li>control through XMPP bot</li>
+      <li>access permissions</li>
+      <li>ssh public-private key authentication<br>
+      </li>
+      <li>TODO: finish this list</li>
+    </ul>
+    <h2><a class="mozTocH2" name="mozTocId715038"></a>GitPub Site
+      Structure Graphic</h2>
+    <img alt="picture (made with Dia) ilustrating GitPub site structure"
+      src="gitpub.png" height="566" width="412"><br>
+    Here are displayed<br>
+    <ul>
+      <li>site, which contains</li>
+      <li>homes, each of which can contain</li>
+      <li>repositories</li>
+      <li>site, homes and repositories have some particular settings</li>
+    </ul>
+    <ul>
+    </ul>
+    <h2><a class="mozTocH2" name="mozTocId494053"></a>Installation and
+      Requirements<br>
+    </h2>
+    <p>Requirements:<br>
+    </p>
+    <ul>
+      <li>org_wayround_sshgithost</li>
+      <li>paramico</li>
+      <li>ZODB<br>
+      </li>
+    </ul>
+    <p>Installation are simple:<br>
+    </p>
+    <pre>pip3 install -U org_wayround_gitpub<br></pre>
+    <blockquote>
+      <p>NOTE: at the time of this writing, this project has no
+        registration in PYPI<br>
+      </p>
+    </blockquote>
+    <h2><a class="mozTocH2" name="mozTocId468573"></a>Understanding
+      Permissions and Roles<br>
+    </h2>
+    <p>Users on site, homes and repositories can have one of following
+      roles:<br>
+    </p>
+    <table border="1" cellpadding="2" cellspacing="2" width="100%">
+      <tbody>
+        <tr>
+          <td valign="top">role\subject<br>
+          </td>
+          <td valign="top">site<br>
+          </td>
+          <td valign="top">home<br>
+          </td>
+          <td valign="top">repository<br>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top">owner</td>
+          <td valign="top">The site owner have full access for all
+            resources of site and can change any it's data and
+            parameters.<br>
+          </td>
+          <td valign="top">The home user is user hos JID is equals to
+            directory name under site root directory. Nobody else can be
+            owner of users home.<br>
+          </td>
+          <td valign="top">Repository owner can be only owner of home in
+            witch this repository residents.<br>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top">guest</td>
+          <td valign="top">Site guest - is simply unregistered on site
+            user. Site behavior against guests is determined by
+            site-level settings (see GitPub Site Structure Graphic)<br>
+          </td>
+          <td valign="top">Home guest is user unregistered in this home.
+            Only home owner can set someone's JID as user or blocked for
+            he's home. Simple user can not change JID associations not
+            for he's own homes.<br>
+          </td>
+          <td valign="top">User not registered with repository. Access
+            rights are determined with particular settings (see GitPub
+            Site Structure Graphic)</td>
+        </tr>
+        <tr>
+          <td valign="top">user</td>
+          <td valign="top">Site user - is user which have he's home in
+            site directory postfactum.<br>
+          </td>
+          <td valign="top">JID registered as user in some one's home.
+            Being a user of someone's home doesn't gives one right to
+            manipulate directories in such home.<br>
+          </td>
+          <td valign="top">JID with role user in some repository can
+            push to such repository.<br>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top">blocked</td>
+          <td valign="top">blocked user is user which in prohibited to
+            use site and it's underlying resources.<br>
+          </td>
+          <td valign="top">has no access to home and underlying
+            repositories.<br>
+          </td>
+          <td valign="top">prohibited to do anything with this
+            repository.<br>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <blockquote> </blockquote>
+    <pre></pre>
+    <h2><a class="mozTocH2" name="mozTocId170836"></a>Operations</h2>
+    <h3><a class="mozTocH2" name="mozTocId545347"></a>Getting Help from
+      Site-bot</h3>
+    <p>You can get list of all available bot commands and help for those
+      commands by using --help parameter. For instance, retrieving
+      command list is:<br>
+    </p>
+    <pre>&gt;--help<br>Usage:  [options] [parameters]<br><br>commands:<br>    set<br>        Get/Set some site/home/repo setting<br><br>    register<br>        Register self or new user (self by default)<br><br>    status<br>        Get status for You or some one JID on site, home or repository<br><br>    set-key<br>        Set Your public key<br><br>    get-key<br>        Print Your public key<br><br>    set-role<br>        Set some one's role for site, home or repository.<br><br>    ls<br>        List homes on site or repositories in home<br><br>Exit Code: 0 (showing help)<br></pre>
+    <p>And here is example of some command help:<br>
+    </p>
+    <pre>&gt;ls --help<br>Usage: ls [options] [parameters]<br><br>List homes on site or repositories in home<br><br>Exit Code: 0 (showing help)<br></pre>
+    <h3><a class="mozTocH2" name="mozTocId292545"></a>Registering on
+      Site</h3>
+    <p>Open XMPP chat communication with GitPub site-bot of site You
+      wish work with. And then simply enter command <b>register</b>.
+      Upon success You will end with your home directory created in the
+      root of host site.<br>
+    </p>
+    <h3><a class="mozTocH2" name="mozTocId865849"></a>Generating New
+      Private/Public key pair</h3>
+    <p>You can use standard <b>ssh-keygen</b> command. Example:<br>
+    </p>
+    <pre><span class="command">ssh-keygen -t rsa -C "<em>your_email@example.com</em>"<br></span><span class="command"></span></pre>
+    <h3><a class="mozTocH2" name="mozTocId668645"></a>Applying public
+      key part to Your home on GitPub site</h3>
+    <p>Open XMPP chat communication with GitPub site-bot of site You
+      wish work with. Then use command <b>set-key</b> to set new public
+      key. Use this command's --help to print it's usage info.<br>
+    </p>
+    <h3><a class="mozTocH3" name="mozTocId922690"></a>Upload New Git
+      Repository to Host</h3>
+    <p>Uploading is done with <b>scp</b> program.<br>
+    </p>
+    <pre>scp -r -P 2121 test123.git tests@wayround.org@localhost:/tests@wayround.org<br></pre>
+    <p>Not necessary, but test123.git here is ought to be a bare
+      repository. You must have write permission to /tests@wayround.org
+      on this host to be able copy files there.<br>
+    </p>
+    <blockquote>NOTE: simply saying, <b>scp</b> is simply for copying
+      files. So any files can be uploaded this way. <br>
+    </blockquote>
+    <h3><a class="mozTocH3" name="mozTocId361439"></a>Configuring
+      'remote' in Your Git repository</h3>
+    <p>Following by example in <b>Upload New Git Repository to Host </b>section,
+
+
+      the <i>remote </i>configuration in Your repository must look
+      like this:<br>
+    </p>
+    <pre>&gt;git remote -v<br>origin	ssh://tests@wayround.org@localhost:2121/tests@wayround.org/test123.git (fetch)<br>origin	ssh://tests@wayround.org@localhost:2121/tests@wayround.org/test123.git (push)<br>   </pre>
+    <blockquote> </blockquote>
+  </body>
+</html>
