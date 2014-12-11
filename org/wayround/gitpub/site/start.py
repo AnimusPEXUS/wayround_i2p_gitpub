@@ -48,6 +48,9 @@ adds['ssh_host_address'] = 'localhost'
 adds['ssh_host_port'] = 2121
 adds['host_key_privat_rsa_filename'] = \
     os.path.join(wd, 'host_keys', 'host_rsa')
+adds['enable_view_repo_server'] = False
+adds['view_repo_server_host'] = 'localhost'
+adds['view_repo_server_port'] = 8085
 
 
 commands = org.wayround.gitpub.commands.commands()

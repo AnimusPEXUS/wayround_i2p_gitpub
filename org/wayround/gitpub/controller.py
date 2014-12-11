@@ -2,8 +2,12 @@
 import os
 import collections
 
+
 import org.wayround.xmpp.core
 import org.wayround.sshgithost.sshgithost
+
+
+import org.wayround.gitpub.view_repo_server
 
 
 class Controller:
@@ -20,6 +24,7 @@ class Controller:
         self.rtenv = None
         self.bot = None
         self._ssh_git_host = None
+        self.repo_view_site = None
 
         return
 
@@ -27,13 +32,24 @@ class Controller:
         self.bot = bot
         return
 
+    def set_repo_view_site(self, repo_view_site):
+        if repo_view_site is not None and not isinstance(
+                repo_view_site,
+                org.wayround.gitpub.view_repo_server.GitPubViewRepoServer
+                ):
+            raise TypeError("`repo_view_site' - invalid type")
+        self.repo_view_site = repo_view_site
+        return
+
+    def get_repo_view_site(self):
+        return self.repo_view_site
+
     def set_ssh_git_host(self, ssh_git_host):
         self._ssh_git_host = ssh_git_host
         self._ssh_git_host.set_callbacks(
             {'check_key': self.check_key,
              'check_permission': self.check_permission_exported
              }
-
             )
         return
 
@@ -158,17 +174,17 @@ class Controller:
                 else:
 
                     if ((actor_jid_role == 'owner')
-                        or
-                        (actor_jid_role == 'guest'
-                                 and self.get_setting(
-                                     self.owner_jid,
-                                     None,
-                                     None,
-                                     'guest_can_register_self',
-                                     messages
-                                     )
-                                 )
-                        ):
+                            or
+                            (actor_jid_role == 'guest'
+                             and self.get_setting(
+                                         self.owner_jid,
+                                         None,
+                                         None,
+                                         'guest_can_register_self',
+                                         messages
+                                         )
+                             )
+                            ):
 
                         try:
                             self.rtenv.modules[self.ttm].\

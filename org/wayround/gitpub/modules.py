@@ -34,7 +34,8 @@ class GitPub(org.wayround.softengine.rtenv.ModulePrototype):
     ACCEPTABLE_REPO_SETTINGS = collections.OrderedDict([
         ('title', "No title"),
         ('description', "No description"),
-        ('site', ''),
+        ('home_site_url', ''),
+        ('site_branch_name', ''),
         ('user_can_read', False),
         ('user_can_write', False),
         ('guest_can_read', False),
