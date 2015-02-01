@@ -3,11 +3,11 @@ import os
 import collections
 
 
-import org.wayround.xmpp.core
-import org.wayround.sshgithost.sshgithost
+import wayround_org.xmpp.core
+import wayround_org.sshgithost.sshgithost
 
 
-import org.wayround.gitpub.view_repo_server
+import wayround_org.gitpub.web_server
 
 
 class Controller:
@@ -19,7 +19,7 @@ class Controller:
 
         self.owner_jid = owner_jid
 
-        self.ttm = 'org_wayround_gitpub_modules_GitPub'
+        self.ttm = 'wayround_org_gitpub_modules_GitPub'
 
         self.rtenv = None
         self.bot = None
@@ -35,7 +35,7 @@ class Controller:
     def set_repo_view_site(self, repo_view_site):
         if repo_view_site is not None and not isinstance(
                 repo_view_site,
-                org.wayround.gitpub.view_repo_server.GitPubViewRepoServer
+                wayround_org.gitpub.view_repo_server.GitPubViewRepoServer
                 ):
             raise TypeError("`repo_view_site' - invalid type")
         self.repo_view_site = repo_view_site
@@ -53,6 +53,9 @@ class Controller:
             )
         return
 
+    def get_ssh_git_host(self):
+        return self._ssh_git_host
+
     def set_rtenv(self, rtenv):
         self.rtenv = rtenv
         return
@@ -64,8 +67,8 @@ class Controller:
             messages
             ):
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        target_jid = org.wayround.xmpp.core.jid_to_bare(target_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        target_jid = wayround_org.xmpp.core.jid_to_bare(target_jid)
 
         actor_jid_role = self.get_role(actor_jid, actor_jid)
 
@@ -104,8 +107,8 @@ class Controller:
         if target_jid is None:
             target_jid = actor_jid
 
-        actor_jid_bare = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        target_jid_bare = org.wayround.xmpp.core.jid_to_bare(target_jid)
+        actor_jid_bare = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        target_jid_bare = wayround_org.xmpp.core.jid_to_bare(target_jid)
 
         actor_jid_role = self.get_role(actor_jid_bare, actor_jid_bare)
 
@@ -177,14 +180,14 @@ class Controller:
                             or
                             (actor_jid_role == 'guest'
                              and self.get_setting(
-                                         self.owner_jid,
-                                         None,
-                                         None,
-                                         'guest_can_register_self',
+                                 self.owner_jid,
+                                 None,
+                                 None,
+                                 'guest_can_register_self',
                                          messages
-                                         )
+                                 )
                              )
-                            ):
+                        ):
 
                         try:
                             self.rtenv.modules[self.ttm].\
@@ -224,7 +227,7 @@ class Controller:
             messages=None
             ):
 
-        path = org.wayround.sshgithost.sshgithost.join_levels(
+        path = wayround_org.sshgithost.sshgithost.join_levels(
             home_level,
             repo_level,
             rest
@@ -256,8 +259,8 @@ class Controller:
         if jid_to_know is None:
             jid_to_know = actor_jid
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        jid_to_know = org.wayround.xmpp.core.jid_to_bare(jid_to_know)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        jid_to_know = wayround_org.xmpp.core.jid_to_bare(jid_to_know)
 
         actor_role = self.get_role(actor_jid, actor_jid)
 
@@ -301,11 +304,11 @@ class Controller:
             messages=None
             ):
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        subject_jid = org.wayround.xmpp.core.jid_to_bare(subject_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        subject_jid = wayround_org.xmpp.core.jid_to_bare(subject_jid)
 
         home_level, repo_level, rest = \
-            org.wayround.sshgithost.sshgithost.get_levels('/', path)
+            wayround_org.sshgithost.sshgithost.get_levels('/', path)
 
         return self.get_role(
             actor_jid,
@@ -325,8 +328,8 @@ class Controller:
 
         check_level_value_combination(home_level, repo_level)
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        subject_jid = org.wayround.xmpp.core.jid_to_bare(subject_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        subject_jid = wayround_org.xmpp.core.jid_to_bare(subject_jid)
 
         ret = 'guest'
 
@@ -389,11 +392,11 @@ class Controller:
             messages=None
             ):
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        subject_jid = org.wayround.xmpp.core.jid_to_bare(subject_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        subject_jid = wayround_org.xmpp.core.jid_to_bare(subject_jid)
 
         home_level, repo_level, rest = \
-            org.wayround.sshgithost.sshgithost.get_levels('/', path)
+            wayround_org.sshgithost.sshgithost.get_levels('/', path)
 
         return self.set_role(
             actor_jid,
@@ -416,8 +419,8 @@ class Controller:
 
         check_level_value_combination(home_level, repo_level)
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        subject_jid = org.wayround.xmpp.core.jid_to_bare(subject_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        subject_jid = wayround_org.xmpp.core.jid_to_bare(subject_jid)
 
         error = False
 
@@ -486,11 +489,11 @@ class Controller:
             messages=None
             ):
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        subject_jid = org.wayround.xmpp.core.jid_to_bare(subject_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        subject_jid = wayround_org.xmpp.core.jid_to_bare(subject_jid)
 
         home_level, repo_level, rest = \
-            org.wayround.sshgithost.sshgithost.get_levels('/', path)
+            wayround_org.sshgithost.sshgithost.get_levels('/', path)
 
         return self.get_permissions(
             actor_jid,
@@ -511,8 +514,8 @@ class Controller:
 
         check_level_value_combination(home_level, repo_level)
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        subject_jid = org.wayround.xmpp.core.jid_to_bare(subject_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        subject_jid = wayround_org.xmpp.core.jid_to_bare(subject_jid)
 
         ret = []
 
@@ -538,11 +541,11 @@ class Controller:
             messages=None
             ):
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        subject_jid = org.wayround.xmpp.core.jid_to_bare(subject_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        subject_jid = wayround_org.xmpp.core.jid_to_bare(subject_jid)
 
         home_level, repo_level, rest = \
-            org.wayround.sshgithost.sshgithost.get_levels('/', path)
+            wayround_org.sshgithost.sshgithost.get_levels('/', path)
 
         return self.check_permission(
             actor_jid,
@@ -791,8 +794,8 @@ class Controller:
             messages=None
             ):
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        subject_jid = org.wayround.xmpp.core.jid_to_bare(subject_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        subject_jid = wayround_org.xmpp.core.jid_to_bare(subject_jid)
 
         check_level_value_combination(home_level, repo_level)
 
@@ -944,7 +947,7 @@ class Controller:
             ):
 
         home_level, repo_level, rest = \
-            org.wayround.sshgithost.sshgithost.get_levels('/', path)
+            wayround_org.sshgithost.sshgithost.get_levels('/', path)
 
         ret = 0
 
@@ -977,8 +980,8 @@ class Controller:
             messages=None
             ):
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        subject_jid = org.wayround.xmpp.core.jid_to_bare(subject_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        subject_jid = wayround_org.xmpp.core.jid_to_bare(subject_jid)
 
         ret = None
 
@@ -993,7 +996,7 @@ class Controller:
             messages.append(
                 {
                     'type': 'error',
-                    'text': "Can't list contents"
+                    'text': "Can't list contents. permission related errors."
                     }
                 )
             ret = None
@@ -1047,8 +1050,8 @@ class Controller:
 
         ret = 0
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        target_jid = org.wayround.xmpp.core.jid_to_bare(target_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        target_jid = wayround_org.xmpp.core.jid_to_bare(target_jid)
 
         actor_role = self.get_role(actor_jid, actor_jid)
 
@@ -1093,8 +1096,8 @@ class Controller:
 
         ret = 0
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
-        target_jid = org.wayround.xmpp.core.jid_to_bare(target_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
+        target_jid = wayround_org.xmpp.core.jid_to_bare(target_jid)
 
         actor_role = self.get_role(actor_jid, actor_jid)
 
@@ -1167,10 +1170,10 @@ class Controller:
             messages
             ):
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
 
         home_level, repo_level, rest = \
-            org.wayround.sshgithost.sshgithost.get_levels('/', path)
+            wayround_org.sshgithost.sshgithost.get_levels('/', path)
 
         return self.set_setting(
             actor_jid,
@@ -1195,7 +1198,7 @@ class Controller:
 
         check_level_value_combination(home_level, repo_level)
 
-        actor_jid = org.wayround.xmpp.core.jid_to_bare(actor_jid)
+        actor_jid = wayround_org.xmpp.core.jid_to_bare(actor_jid)
 
         actor_role = self.get_role(actor_jid, actor_jid)
 
@@ -1331,7 +1334,7 @@ def install_launcher(path):
     src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'site'))
     dst_dir = path
 
-    org.wayround.utils.file.copytree(
+    wayround_org.utils.file.copytree(
         src_dir,
         dst_dir,
         overwrite_files=True,

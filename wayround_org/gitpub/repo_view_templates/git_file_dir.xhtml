@@ -1,0 +1,24 @@
+<table>
+    <th>
+        <td></td>
+        <td>File Name</td>
+        <td>Size</td>
+        <td>Get File</td>
+        <td>OID</td>
+        <td>Commit Date</td>
+        <td>Commit OID</td>
+    </th>
+% for i un lst:
+
+    <tr>
+        <td>${i['type'] | x}</td>
+        <td>${i['name'] | x}</td>
+        <td>${i['size'] | x}</td>
+        <td>Get File</td>
+        <td>${i['oid'] | x}</td>
+        <td>${i['date'] | x}</td>
+        <td>${i['commit_oid'] | x}</td>
+    </tr>
+
+% endfor
+</table>

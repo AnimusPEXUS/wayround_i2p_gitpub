@@ -2,17 +2,17 @@
 import logging
 import threading
 
-import org.wayround.xmpp.client_bot
+import wayround_org.xmpp.client_bot
 
-import org.wayround.softengine.rtenv
+import wayround_org.softengine.rtenv
 
-import org.wayround.gitpub.jabber_commands
-import org.wayround.gitpub.modules
-import org.wayround.gitpub.controller
+import wayround_org.gitpub.jabber_commands
+import wayround_org.gitpub.modules
+import wayround_org.gitpub.controller
 
-import org.wayround.gitpub.view_repo_server
+import wayround_org.gitpub.web_server
 
-import org.wayround.sshgithost.sshgithost
+import wayround_org.sshgithost.sshgithost
 
 
 def commands():
@@ -32,60 +32,51 @@ def site_start(comm, opts, args, adds):
     ssh_working_root_dir = adds['ssh_working_root_dir']
     ssh_host_address = adds['ssh_host_address']
     ssh_host_port = adds['ssh_host_port']
-    host_key_privat_rsa_filename = adds['host_key_privat_rsa_filename']
+    host_key_private_rsa_filename = adds['host_key_private_rsa_filename']
 
     jid = adds['jid']
     xmpp_connection_info = adds['xmpp_connection_info']
     xmpp_auth_info = adds['xmpp_auth_info']
 
-    db = org.wayround.softengine.rtenv.DB_ZODB(db_filename)
+    db = wayround_org.softengine.rtenv.DB_ZODB(db_filename)
 
-    rtenv = org.wayround.softengine.rtenv.RuntimeEnvironment(db)
+    rtenv = wayround_org.softengine.rtenv.RuntimeEnvironment(db)
 
-    org.wayround.gitpub.modules.GitPub(rtenv)
+    wayround_org.gitpub.modules.GitPub(rtenv)
 
     exit_event = threading.Event()
 
     rtenv.init()
 
-    commands = org.wayround.gitpub.jabber_commands.JabberCommands()
+    commands = wayround_org.gitpub.jabber_commands.JabberCommands()
 
-    ssh_git_host = org.wayround.sshgithost.sshgithost.SSHGitHost(
+    ssh_git_host = wayround_org.sshgithost.sshgithost.SSHGitHost(
         ssh_working_root_dir,
         ssh_host_address,
         ssh_host_port,
-        host_key_privat_rsa_filename
+        host_key_private_rsa_filename
         )
 
-    bot = org.wayround.xmpp.client_bot.Bot()
+    bot = wayround_org.xmpp.client_bot.Bot()
 
-    if adds['enable_view_repo_server']:
-        view_repo_server = \
-            org.wayround.gitpub.view_repo_server.GitPubViewRepoServer()
-
-    # environ = org.wayround.gitpub.env.Environment(
+    # environ = wayround_org.gitpub.env.Environment(
     #    rtenv,
     #    host=host,
     #    port=port,
     #    owner_jid=main_owner
     #    )
 
-    controller = org.wayround.gitpub.controller.Controller(
+    controller = wayround_org.gitpub.controller.Controller(
         owner_jid=main_owner
         )
     controller.set_bot(bot)
     controller.set_ssh_git_host(ssh_git_host)
     controller.set_rtenv(rtenv)
-    if adds['enable_view_repo_server']:
-        view_repo_server.set_controller(controller)
-        view_repo_server.set_host_port(
-            adds['view_repo_server_host'],
-            adds['view_repo_server_port']
-            )
+
     # threading.Thread(
-        #name="Environ Thread",
-        # target=environ.start
-        #).start()
+    #name="Environ Thread",
+    # target=environ.start
+    #).start()
 
     commands.set_controller(controller)
     commands.set_ssh_git_host(ssh_git_host)
@@ -93,6 +84,16 @@ def site_start(comm, opts, args, adds):
     bot.set_commands(commands.commands_dict())
     # environ.set_bot(bot)
     # environ.set_ssh_git_host(ssh_git_host)
+
+    print("web server: {} {}".format(adds['web_frontend_domain'],
+        (adds['web_frontend_host'],
+         int(adds['web_frontend_port']))))
+    web_server = wayround_org.gitpub.web_server.WebServer(
+        controller,
+        adds['web_frontend_domain'],
+        (adds['web_frontend_host'],
+         int(adds['web_frontend_port']))
+        )
 
     threading.Thread(
         name="Bot Thread",
@@ -104,12 +105,11 @@ def site_start(comm, opts, args, adds):
     ssh_git_host.start()
     print("started ssh service")
 
-    if adds['enable_view_repo_server']:
-        print("starting view repo")
-        threading.Thread(
-            target=view_repo_server.start
-            ).start()
-        print("started view repo")
+    print("starting web_server")
+    threading.Thread(
+        target=web_server.start
+        ).start()
+    print("started web_server")
 
     try:
         exit_event.wait()
@@ -124,10 +124,9 @@ def site_start(comm, opts, args, adds):
     ssh_git_host.stop()
     print("starting bot stop")
 
-    if adds['enable_view_repo_server']:
-        print("stopping view repo")
-        view_repo_server.stop()
-        print("stopping view repo")
+    print("stopping view repo")
+    web_server.stop()
+    print("stopping view repo")
 
     bot.disconnect()
     # print("starting environ stop")
