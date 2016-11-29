@@ -2,17 +2,17 @@
 import logging
 import threading
 
-import wayround_org.xmpp.client_bot
+import wayround_i2p.xmpp.client_bot
 
-import wayround_org.softengine.rtenv
+import wayround_i2p.softengine.rtenv
 
-import wayround_org.gitpub.jabber_commands
-import wayround_org.gitpub.modules
-import wayround_org.gitpub.controller
+import wayround_i2p.gitpub.jabber_commands
+import wayround_i2p.gitpub.modules
+import wayround_i2p.gitpub.controller
 
-import wayround_org.gitpub.web_server
+import wayround_i2p.gitpub.web_server
 
-import wayround_org.sshgithost.sshgithost
+import wayround_i2p.sshgithost.sshgithost
 
 
 def commands():
@@ -38,35 +38,35 @@ def site_start(comm, opts, args, adds):
     xmpp_connection_info = adds['xmpp_connection_info']
     xmpp_auth_info = adds['xmpp_auth_info']
 
-    db = wayround_org.softengine.rtenv.DB_ZODB(db_filename)
+    db = wayround_i2p.softengine.rtenv.DB_ZODB(db_filename)
 
-    rtenv = wayround_org.softengine.rtenv.RuntimeEnvironment(db)
+    rtenv = wayround_i2p.softengine.rtenv.RuntimeEnvironment(db)
 
-    wayround_org.gitpub.modules.GitPub(rtenv)
+    wayround_i2p.gitpub.modules.GitPub(rtenv)
 
     exit_event = threading.Event()
 
     rtenv.init()
 
-    commands = wayround_org.gitpub.jabber_commands.JabberCommands()
+    commands = wayround_i2p.gitpub.jabber_commands.JabberCommands()
 
-    ssh_git_host = wayround_org.sshgithost.sshgithost.SSHGitHost(
+    ssh_git_host = wayround_i2p.sshgithost.sshgithost.SSHGitHost(
         ssh_working_root_dir,
         ssh_host_address,
         ssh_host_port,
         host_key_private_rsa_filename
         )
 
-    bot = wayround_org.xmpp.client_bot.Bot()
+    bot = wayround_i2p.xmpp.client_bot.Bot()
 
-    # environ = wayround_org.gitpub.env.Environment(
+    # environ = wayround_i2p.gitpub.env.Environment(
     #    rtenv,
     #    host=host,
     #    port=port,
     #    owner_jid=main_owner
     #    )
 
-    controller = wayround_org.gitpub.controller.Controller(
+    controller = wayround_i2p.gitpub.controller.Controller(
         owner_jid=main_owner
         )
     controller.set_bot(bot)
@@ -88,7 +88,7 @@ def site_start(comm, opts, args, adds):
     print("web server: {} {}".format(adds['web_frontend_domain'],
         (adds['web_frontend_host'],
          int(adds['web_frontend_port']))))
-    web_server = wayround_org.gitpub.web_server.WebServer(
+    web_server = wayround_i2p.gitpub.web_server.WebServer(
         controller,
         adds['web_frontend_domain'],
         (adds['web_frontend_host'],

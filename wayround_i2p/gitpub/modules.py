@@ -7,15 +7,15 @@ import persistent.list
 
 import transaction
 
-import wayround_org.xmpp.core
-import wayround_org.utils.types
+import wayround_i2p.xmpp.core
+import wayround_i2p.utils.types
 
-import wayround_org.softengine.rtenv
+import wayround_i2p.softengine.rtenv
 
-GITPUB_MODULE_NAME = 'wayround_org_gitpub_modules_GitPub'
+GITPUB_MODULE_NAME = 'wayround_i2p_gitpub_modules_GitPub'
 
 
-class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
+class GitPub(wayround_i2p.softengine.rtenv.ModulePrototype):
 
     ACCEPTABLE_SITE_SETTINGS = collections.OrderedDict([
         ('title', "No title"),
@@ -74,41 +74,41 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         db_root = db_connection.root
 
         # site settings: {name -> value}
-        if not hasattr(db_root, 'wayround_org_gitpub_settings'):
-            db_root.wayround_org_gitpub_settings = \
+        if not hasattr(db_root, 'wayround_i2p_gitpub_settings'):
+            db_root.wayround_i2p_gitpub_settings = \
                 persistent.mapping.PersistentMapping()
 
         # {home -> {name -> value}}
-        if not hasattr(db_root, 'wayround_org_gitpub_home_settings'):
-            db_root.wayround_org_gitpub_home_settings = \
+        if not hasattr(db_root, 'wayround_i2p_gitpub_home_settings'):
+            db_root.wayround_i2p_gitpub_home_settings = \
                 persistent.mapping.PersistentMapping()
 
         # {home -> {repo -> {name -> value}}}
-        if not hasattr(db_root, 'wayround_org_gitpub_repo_settings'):
-            db_root.wayround_org_gitpub_repo_settings = \
+        if not hasattr(db_root, 'wayround_i2p_gitpub_repo_settings'):
+            db_root.wayround_i2p_gitpub_repo_settings = \
                 persistent.mapping.PersistentMapping()
 
         # {jid -> role}
-        if not hasattr(db_root, 'wayround_org_gitpub_roles'):
-            db_root.wayround_org_gitpub_roles = \
+        if not hasattr(db_root, 'wayround_i2p_gitpub_roles'):
+            db_root.wayround_i2p_gitpub_roles = \
                 persistent.mapping.PersistentMapping()
 
         # home -> {jid -> role}
-        if not hasattr(db_root, 'wayround_org_gitpub_home_roles'):
-            db_root.wayround_org_gitpub_home_roles = \
+        if not hasattr(db_root, 'wayround_i2p_gitpub_home_roles'):
+            db_root.wayround_i2p_gitpub_home_roles = \
                 persistent.mapping.PersistentMapping()
 
         # home -> {repo -> {jid -> role}}
-        if not hasattr(db_root, 'wayround_org_gitpub_repo_roles'):
-            db_root.wayround_org_gitpub_repo_roles = \
+        if not hasattr(db_root, 'wayround_i2p_gitpub_repo_roles'):
+            db_root.wayround_i2p_gitpub_repo_roles = \
                 persistent.mapping.PersistentMapping()
 
         # jid -> { 'msg' -> 'txt',
         #          'msg_type_part' -> 'txt',
         #          'msg_base64_part' -> 'txt'
         #          'msg_jid_part' -> 'txt'}
-        if not hasattr(db_root, 'wayround_org_gitpub_public_keys'):
-            db_root.wayround_org_gitpub_public_keys = \
+        if not hasattr(db_root, 'wayround_i2p_gitpub_public_keys'):
+            db_root.wayround_i2p_gitpub_public_keys = \
                 persistent.mapping.PersistentMapping()
 
         transaction.commit()
@@ -126,8 +126,8 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
         ret = self.ACCEPTABLE_SITE_SETTINGS[name]
 
-        if name in con_root.wayround_org_gitpub_settings:
-            ret = con_root.wayround_org_gitpub_settings[name]
+        if name in con_root.wayround_i2p_gitpub_settings:
+            ret = con_root.wayround_i2p_gitpub_settings[name]
 
         transaction.commit()
         db_con.close()
@@ -140,7 +140,7 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
             raise ValueError("invalid `name'")
 
         if isinstance(self.ACCEPTABLE_SITE_SETTINGS[name], bool):
-            value = wayround_org.utils.types.value_to_bool(value)
+            value = wayround_i2p.utils.types.value_to_bool(value)
 
         if not isinstance(value, type(self.ACCEPTABLE_SITE_SETTINGS[name])):
             raise TypeError(
@@ -150,7 +150,7 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
-        con_root.wayround_org_gitpub_settings[name] = value
+        con_root.wayround_i2p_gitpub_settings[name] = value
 
         transaction.commit()
         db_con.close()
@@ -159,7 +159,7 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
     def get_home_setting(self, home, name):
 
-        home = wayround_org.xmpp.core.jid_to_bare(home)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
 
         if name not in self.ACCEPTABLE_HOME_SETTINGS:
             raise ValueError("invalid `name'")
@@ -169,9 +169,9 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
         ret = self.ACCEPTABLE_HOME_SETTINGS[name]
 
-        if home in con_root.wayround_org_gitpub_home_settings:
-            if name in con_root.wayround_org_gitpub_home_settings[home]:
-                ret = con_root.wayround_org_gitpub_home_settings[home][name]
+        if home in con_root.wayround_i2p_gitpub_home_settings:
+            if name in con_root.wayround_i2p_gitpub_home_settings[home]:
+                ret = con_root.wayround_i2p_gitpub_home_settings[home][name]
 
         transaction.commit()
         db_con.close()
@@ -180,13 +180,13 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
     def set_home_setting(self, home, name, value):
 
-        home = wayround_org.xmpp.core.jid_to_bare(home)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
 
         if name not in self.ACCEPTABLE_HOME_SETTINGS:
             raise ValueError("invalid `name'")
 
         if isinstance(self.ACCEPTABLE_HOME_SETTINGS[name], bool):
-            value = wayround_org.utils.types.value_to_bool(value)
+            value = wayround_i2p.utils.types.value_to_bool(value)
 
         if not isinstance(value, type(self.ACCEPTABLE_HOME_SETTINGS[name])):
             raise TypeError(
@@ -196,11 +196,11 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
-        if not home in con_root.wayround_org_gitpub_home_settings:
-            con_root.wayround_org_gitpub_home_settings[home] = \
+        if not home in con_root.wayround_i2p_gitpub_home_settings:
+            con_root.wayround_i2p_gitpub_home_settings[home] = \
                 persistent.mapping.PersistentMapping()
 
-        con_root.wayround_org_gitpub_home_settings[home][name] = value
+        con_root.wayround_i2p_gitpub_home_settings[home][name] = value
 
         transaction.commit()
         db_con.close()
@@ -209,7 +209,7 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
     def get_repo_setting(self, home, repo, name):
 
-        home = wayround_org.xmpp.core.jid_to_bare(home)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
 
         if name not in self.ACCEPTABLE_REPO_SETTINGS:
             raise ValueError("invalid `name'")
@@ -219,12 +219,12 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
         ret = self.ACCEPTABLE_REPO_SETTINGS[name]
 
-        if home in con_root.wayround_org_gitpub_repo_settings:
-            if repo in con_root.wayround_org_gitpub_repo_settings[home]:
-                if name in con_root.wayround_org_gitpub_repo_settings[
+        if home in con_root.wayround_i2p_gitpub_repo_settings:
+            if repo in con_root.wayround_i2p_gitpub_repo_settings[home]:
+                if name in con_root.wayround_i2p_gitpub_repo_settings[
                         home
                         ][repo]:
-                    ret = con_root.wayround_org_gitpub_repo_settings[
+                    ret = con_root.wayround_i2p_gitpub_repo_settings[
                         home
                         ][
                         repo
@@ -238,13 +238,13 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
     def set_repo_setting(self, home, repo, name, value):
 
-        home = wayround_org.xmpp.core.jid_to_bare(home)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
 
         if name not in self.ACCEPTABLE_REPO_SETTINGS:
             raise ValueError("invalid `name'")
 
         if isinstance(self.ACCEPTABLE_REPO_SETTINGS[name], bool):
-            value = wayround_org.utils.types.value_to_bool(value)
+            value = wayround_i2p.utils.types.value_to_bool(value)
 
         if not isinstance(value, type(self.ACCEPTABLE_REPO_SETTINGS[name])):
             raise TypeError(
@@ -254,15 +254,15 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
-        if not home in con_root.wayround_org_gitpub_repo_settings:
-            con_root.wayround_org_gitpub_repo_settings[home] = \
+        if not home in con_root.wayround_i2p_gitpub_repo_settings:
+            con_root.wayround_i2p_gitpub_repo_settings[home] = \
                 persistent.mapping.PersistentMapping()
 
-        if not repo in con_root.wayround_org_gitpub_repo_settings[home]:
-            con_root.wayround_org_gitpub_repo_settings[home][repo] = \
+        if not repo in con_root.wayround_i2p_gitpub_repo_settings[home]:
+            con_root.wayround_i2p_gitpub_repo_settings[home][repo] = \
                 persistent.mapping.PersistentMapping()
 
-        con_root.wayround_org_gitpub_repo_settings[home][name][repo] = value
+        con_root.wayround_i2p_gitpub_repo_settings[home][name][repo] = value
 
         transaction.commit()
         db_con.close()
@@ -274,7 +274,7 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
-        ret = dict(con_root.wayround_org_gitpub_roles)
+        ret = dict(con_root.wayround_i2p_gitpub_roles)
 
         transaction.commit()
         db_con.close()
@@ -283,15 +283,15 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
     def get_site_role(self, jid):
 
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
         ret = 'guest'
 
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
-        if jid in con_root.wayround_org_gitpub_roles:
-            ret = con_root.wayround_org_gitpub_roles[jid]
+        if jid in con_root.wayround_i2p_gitpub_roles:
+            ret = con_root.wayround_i2p_gitpub_roles[jid]
 
         transaction.commit()
         db_con.close()
@@ -299,7 +299,7 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         return ret
 
     def set_site_role(self, jid, role):
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
         if not role in ['owner', 'user', 'guest', 'blocked']:
             raise ValueError("invalid `role' value")
@@ -309,12 +309,12 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
         if role == 'guest':
 
-            if jid in con_root.wayround_org_gitpub_roles:
-                del con_root.wayround_org_gitpub_roles[jid]
+            if jid in con_root.wayround_i2p_gitpub_roles:
+                del con_root.wayround_i2p_gitpub_roles[jid]
 
         else:
 
-            con_root.wayround_org_gitpub_roles[jid] = role
+            con_root.wayround_i2p_gitpub_roles[jid] = role
 
         transaction.commit()
         db_con.close()
@@ -322,20 +322,20 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         return
 
     def del_site_role(self, jid):
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
         self.set_site_role(jid, 'guest')
         return
 
     def dict_home_roles(self, home):
-        home = wayround_org.xmpp.core.jid_to_bare(home)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
 
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
         ret = {}
 
-        if home in con_root.wayround_org_gitpub_home_roles:
-            ret = dict(con_root.wayround_org_gitpub_home_roles[home])
+        if home in con_root.wayround_i2p_gitpub_home_roles:
+            ret = dict(con_root.wayround_i2p_gitpub_home_roles[home])
 
         transaction.commit()
         db_con.close()
@@ -343,8 +343,8 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         return ret
 
     def get_home_role(self, home, jid):
-        home = wayround_org.xmpp.core.jid_to_bare(home)
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
         ret = 'guest'
 
@@ -355,9 +355,9 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
             ret = 'owner'
         else:
 
-            if home in con_root.wayround_org_gitpub_home_roles:
-                if jid in con_root.wayround_org_gitpub_home_roles[home]:
-                    ret = con_root.wayround_org_gitpub_home_roles[home][jid]
+            if home in con_root.wayround_i2p_gitpub_home_roles:
+                if jid in con_root.wayround_i2p_gitpub_home_roles[home]:
+                    ret = con_root.wayround_i2p_gitpub_home_roles[home][jid]
 
         transaction.commit()
         db_con.close()
@@ -365,8 +365,8 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         return ret
 
     def set_home_role(self, home, jid, role):
-        home = wayround_org.xmpp.core.jid_to_bare(home)
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
         if not role in ['user', 'guest', 'blocked']:
             raise ValueError("invalid `role' value")
@@ -374,18 +374,18 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
-        if not home in con_root.wayround_org_gitpub_home_roles:
-            con_root.wayround_org_gitpub_home_roles[home] = \
+        if not home in con_root.wayround_i2p_gitpub_home_roles:
+            con_root.wayround_i2p_gitpub_home_roles[home] = \
                 persistent.mapping.PersistentMapping()
 
         if role == 'guest':
 
-            if jid in con_root.wayround_org_gitpub_home_roles[home]:
-                del con_root.wayround_org_gitpub_home_roles[home][jid]
+            if jid in con_root.wayround_i2p_gitpub_home_roles[home]:
+                del con_root.wayround_i2p_gitpub_home_roles[home][jid]
 
         else:
 
-            con_root.wayround_org_gitpub_home_roles[home][jid] = role
+            con_root.wayround_i2p_gitpub_home_roles[home][jid] = role
 
         transaction.commit()
         db_con.close()
@@ -393,22 +393,22 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         return
 
     def del_home_role(self, home, jid):
-        home = wayround_org.xmpp.core.jid_to_bare(home)
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
         self.set_home_role(home, jid, 'guest')
         return
 
     def dict_repo_roles(self, home, repo):
-        home = wayround_org.xmpp.core.jid_to_bare(home)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
 
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
         ret = {}
 
-        if home in con_root.wayround_org_gitpub_repo_roles:
-            if repo in con_root.wayround_org_gitpub_repo_roles[home]:
-                ret = dict(con_root.wayround_org_gitpub_repo_roles[home][repo])
+        if home in con_root.wayround_i2p_gitpub_repo_roles:
+            if repo in con_root.wayround_i2p_gitpub_repo_roles[home]:
+                ret = dict(con_root.wayround_i2p_gitpub_repo_roles[home][repo])
 
         transaction.commit()
         db_con.close()
@@ -416,8 +416,8 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         return ret
 
     def get_repo_role(self, home, repo, jid):
-        home = wayround_org.xmpp.core.jid_to_bare(home)
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
         ret = 'guest'
 
@@ -428,12 +428,12 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
             ret = 'owner'
         else:
 
-            if home in con_root.wayround_org_gitpub_home_roles:
-                if repo in con_root.wayround_org_gitpub_home_roles[home]:
-                    if jid in con_root.wayround_org_gitpub_home_roles[home][
+            if home in con_root.wayround_i2p_gitpub_home_roles:
+                if repo in con_root.wayround_i2p_gitpub_home_roles[home]:
+                    if jid in con_root.wayround_i2p_gitpub_home_roles[home][
                             repo
                             ]:
-                        ret = con_root.wayround_org_gitpub_home_roles[
+                        ret = con_root.wayround_i2p_gitpub_home_roles[
                             home
                             ][
                             repo
@@ -446,8 +446,8 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         return ret
 
     def set_repo_role(self, home, repo, jid, role):
-        home = wayround_org.xmpp.core.jid_to_bare(home)
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
         if not role in ['user', 'guest', 'blocked']:
             raise ValueError("invalid `role' value")
@@ -455,22 +455,22 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
-        if not home in con_root.wayround_org_gitpub_repo_roles:
-            con_root.wayround_org_gitpub_repo_roles[home] = \
+        if not home in con_root.wayround_i2p_gitpub_repo_roles:
+            con_root.wayround_i2p_gitpub_repo_roles[home] = \
                 persistent.mapping.PersistentMapping()
 
-        if not repo in con_root.wayround_org_gitpub_repo_roles[home]:
-            con_root.wayround_org_gitpub_repo_roles[home][repo] = \
+        if not repo in con_root.wayround_i2p_gitpub_repo_roles[home]:
+            con_root.wayround_i2p_gitpub_repo_roles[home][repo] = \
                 persistent.mapping.PersistentMapping()
 
         if role == 'guest':
 
-            if jid in con_root.wayround_org_gitpub_repo_roles[home][repo]:
-                del con_root.wayround_org_gitpub_repo_roles[home][repo][jid]
+            if jid in con_root.wayround_i2p_gitpub_repo_roles[home][repo]:
+                del con_root.wayround_i2p_gitpub_repo_roles[home][repo][jid]
 
         else:
 
-            con_root.wayround_org_gitpub_repo_roles[home][repo][jid] = role
+            con_root.wayround_i2p_gitpub_repo_roles[home][repo][jid] = role
 
         transaction.commit()
         db_con.close()
@@ -478,22 +478,22 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
         return
 
     def del_repo_role(self, home, repo, jid):
-        home = wayround_org.xmpp.core.jid_to_bare(home)
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        home = wayround_i2p.xmpp.core.jid_to_bare(home)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
         self.set_repo_role(home, repo, jid, 'guest')
         return
 
     def get_public_key(self, jid):
 
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
         ret = None
 
-        if jid in con_root.wayround_org_gitpub_public_keys:
-            res = con_root.wayround_org_gitpub_public_keys[jid]
+        if jid in con_root.wayround_i2p_gitpub_public_keys:
+            res = con_root.wayround_i2p_gitpub_public_keys[jid]
             if is_correct_public_key_data(res['msg'], jid):
                 ret = res
 
@@ -504,16 +504,16 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
     def user_is_has_public_key(self, jid):
 
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
         ret = (
-            jid in con_root.wayround_org_gitpub_public_keys
+            jid in con_root.wayround_i2p_gitpub_public_keys
             and
             is_correct_public_key_data(
-                con_root.wayround_org_gitpub_public_keys[jid]['msg'],
+                con_root.wayround_i2p_gitpub_public_keys[jid]['msg'],
                 jid
                 )
             )
@@ -525,7 +525,7 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
     def set_public_key(self, jid, msg):
 
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
         ret = 0
 
@@ -548,14 +548,14 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
             msg_jid = msg_jid.lower()
 
-            msg_jid = wayround_org.xmpp.core.jid_to_bare(msg_jid)
+            msg_jid = wayround_i2p.xmpp.core.jid_to_bare(msg_jid)
 
             if msg_jid != jid:
                 ret = 3
 
         if ret == 0:
 
-            con_root.wayround_org_gitpub_public_keys[jid] = {
+            con_root.wayround_i2p_gitpub_public_keys[jid] = {
                 'msg': msg,
                 'msg_type_part': splitted_msg[0],
                 'msg_base64_part': ''.join(splitted_msg[1].splitlines()),
@@ -571,13 +571,13 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
     def del_public_key(self, jid):
 
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
-        if jid in con_root.wayround_org_gitpub_public_keys:
-            del con_root.wayround_org_gitpub_public_keys[jid]
+        if jid in con_root.wayround_i2p_gitpub_public_keys:
+            del con_root.wayround_i2p_gitpub_public_keys[jid]
 
         transaction.commit()
         db_con.close()
@@ -593,10 +593,10 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
         ret = set()
 
-        for k, v in con_root.wayround_org_gitpub_public_keys.items():
+        for k, v in con_root.wayround_i2p_gitpub_public_keys.items():
             if v['msg_type_part'] == type_:
                 if b64_1 == ''.join(v['msg_base64_part'].splitlines()):
-                    ret.add(wayround_org.xmpp.core.jid_to_bare(k))
+                    ret.add(wayround_i2p.xmpp.core.jid_to_bare(k))
 
         transaction.commit()
         db_con.close()
@@ -605,22 +605,22 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
     def del_home_and_role(self, jid):
 
-        jid = wayround_org.xmpp.core.jid_to_bare(jid)
+        jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
         db_con = self.rtenv.db.open()
         con_root = db_con.root
 
-        if jid in con_root.wayround_org_gitpub_home_settings:
-            del con_root.wayround_org_gitpub_home_settings[jid]
+        if jid in con_root.wayround_i2p_gitpub_home_settings:
+            del con_root.wayround_i2p_gitpub_home_settings[jid]
 
-        if jid in con_root.wayround_org_gitpub_repo_settings:
-            del con_root.wayround_org_gitpub_repo_settings[jid]
+        if jid in con_root.wayround_i2p_gitpub_repo_settings:
+            del con_root.wayround_i2p_gitpub_repo_settings[jid]
 
-        if jid in con_root.wayround_org_gitpub_home_roles:
-            del con_root.wayround_org_gitpub_home_roles[jid]
+        if jid in con_root.wayround_i2p_gitpub_home_roles:
+            del con_root.wayround_i2p_gitpub_home_roles[jid]
 
-        if jid in con_root.wayround_org_gitpub_repo_roles:
-            del con_root.wayround_org_gitpub_repo_roles[jid]
+        if jid in con_root.wayround_i2p_gitpub_repo_roles:
+            del con_root.wayround_i2p_gitpub_repo_roles[jid]
 
         self.del_site_role(jid)
 
@@ -632,7 +632,7 @@ class GitPub(wayround_org.softengine.rtenv.ModulePrototype):
 
 def is_correct_public_key_data(msg, jid):
 
-    jid = wayround_org.xmpp.core.jid_to_bare(jid)
+    jid = wayround_i2p.xmpp.core.jid_to_bare(jid)
 
     pkey = msg
 
@@ -653,7 +653,7 @@ def is_correct_public_key_data(msg, jid):
             error = True
 
     if not error:
-        if not wayround_org.xmpp.core.jid_to_bare(parsed_msg[2]) == jid:
+        if not wayround_i2p.xmpp.core.jid_to_bare(parsed_msg[2]) == jid:
             error = True
 
     # TODO: add more checks

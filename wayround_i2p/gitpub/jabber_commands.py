@@ -3,8 +3,8 @@ import collections
 import logging
 import pprint
 
-import wayround_org.xmpp.core
-import wayround_org.gitpub.modules
+import wayround_i2p.xmpp.core
+import wayround_i2p.gitpub.modules
 
 
 class JabberCommands:
@@ -78,7 +78,7 @@ class JabberCommands:
             error = True
 
         try:
-            jid_to_know = wayround_org.xmpp.core.jid_to_bare(jid_to_know)
+            jid_to_know = wayround_i2p.xmpp.core.jid_to_bare(jid_to_know)
         except:
             messages.append(
                 {'type': 'error',
@@ -152,7 +152,7 @@ permissions: {}
             error = True
 
         try:
-            target_jid = wayround_org.xmpp.core.JID.new_from_str(target_jid)
+            target_jid = wayround_i2p.xmpp.core.JID.new_from_str(target_jid)
         except:
             messages.append(
                 {'type': 'error',
@@ -392,7 +392,7 @@ permissions: {}
             subject_jid, path, role = args
 
             try:
-                subject_jid = wayround_org.xmpp.core.jid_to_bare(subject_jid)
+                subject_jid = wayround_i2p.xmpp.core.jid_to_bare(subject_jid)
             except:
                 messages.append(
                     {'type': 'error',
@@ -515,14 +515,14 @@ permissions: {}
         """.format(
         ', '.join(
             list(
-                wayround_org.gitpub.modules.GitPub.ACCEPTABLE_SITE_SETTINGS.keys())
+                wayround_i2p.gitpub.modules.GitPub.ACCEPTABLE_SITE_SETTINGS.keys())
             ),
         ', '.join(
             list(
-                wayround_org.gitpub.modules.GitPub.ACCEPTABLE_HOME_SETTINGS.keys())
+                wayround_i2p.gitpub.modules.GitPub.ACCEPTABLE_HOME_SETTINGS.keys())
             ),
         ', '.join(
             list(
-                wayround_org.gitpub.modules.GitPub.ACCEPTABLE_REPO_SETTINGS.keys())
+                wayround_i2p.gitpub.modules.GitPub.ACCEPTABLE_REPO_SETTINGS.keys())
             ),
         )

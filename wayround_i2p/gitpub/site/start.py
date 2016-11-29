@@ -3,30 +3,30 @@
 import os.path
 import sys
 
-import wayround_org.utils.program
-import wayround_org.utils.path
+import wayround_i2p.utils.program
+import wayround_i2p.utils.path
 
-import wayround_org.gitpub.commands
+import wayround_i2p.gitpub.commands
 
-import wayround_org.xmpp.core
+import wayround_i2p.xmpp.core
 
 
-wayround_org.utils.program.logging_setup('info')
+wayround_i2p.utils.program.logging_setup('info')
 
 wd = os.path.abspath(os.path.dirname(__file__))
 
-jid = wayround_org.xmpp.core.JID(
+jid = wayround_i2p.xmpp.core.JID(
     user='gitpub',
     domain='wayround.org',
     resource='home'
     )
 
-connection_info = wayround_org.xmpp.core.C2SConnectionInfo(
+connection_info = wayround_i2p.xmpp.core.C2SConnectionInfo(
     host='wayround.org',
     port=5222,
     )
 
-auth_info = wayround_org.xmpp.core.Authentication(
+auth_info = wayround_i2p.xmpp.core.Authentication(
     service='xmpp',
     hostname='wayround.org',
     authid='gitpub',
@@ -39,7 +39,7 @@ adds = {}
 adds['jid'] = jid
 adds['xmpp_connection_info'] = connection_info
 adds['xmpp_auth_info'] = auth_info
-adds['db_filename'] = wayround_org.utils.path.join(wd, 'db', 'database.zodb')
+adds['db_filename'] = wayround_i2p.utils.path.join(wd, 'db', 'database.zodb')
 adds['host'] = 'localhost'
 adds['port'] = 8084
 adds['main_owner'] = 'animus@wayround.org'
@@ -54,10 +54,10 @@ adds['web_frontend_port'] = 8085
 adds['web_frontend_domain'] = 'localhost'
 
 
-commands = wayround_org.gitpub.commands.commands()
+commands = wayround_i2p.gitpub.commands.commands()
 
 command_name = os.path.basename(sys.argv[0])
 
-ret = wayround_org.utils.program.program(command_name, commands, adds)
+ret = wayround_i2p.utils.program.program(command_name, commands, adds)
 
 exit(ret)

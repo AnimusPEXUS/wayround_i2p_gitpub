@@ -7,8 +7,8 @@ import pprint
 import pygit2
 import mako.lookup
 
-import wayround_org.wsgi.server
-import wayround_org.carafe.carafe
+import wayround_i2p.wsgi.server
+import wayround_i2p.carafe.carafe
 
 #MIME_XHTML = 'application/xhtml+xml'
 MIME_XHTML = 'text/html;codepage=UTF-8'
@@ -27,7 +27,7 @@ class GitPubViewRepoServer:
                 )
             )
 
-        self.router = wayround_org.carafe.carafe.Router(
+        self.router = wayround_i2p.carafe.carafe.Router(
             self.default_router_target
             )
 
@@ -235,7 +235,7 @@ class GitPubBranchServer:
     def __init__(self, controller):
         self._controller = controller
 
-        self.router = wayround_org.carafe.carafe.Router(
+        self.router = wayround_i2p.carafe.carafe.Router(
             self.default_router_target
             )
 
@@ -271,10 +271,10 @@ class WebServer:
         self.sub_domain_server = GitPubBranchServer(controller)
 
         self.carafe_app = \
-            wayround_org.carafe.carafe.Carafe(self.router_entry)
+            wayround_i2p.carafe.carafe.Carafe(self.router_entry)
 
         self.wsgi_server = \
-            wayround_org.wsgi.server.CompleteServer(
+            wayround_i2p.wsgi.server.CompleteServer(
                 self.carafe_app.target_for_wsgi_server,
                 address
                 )
